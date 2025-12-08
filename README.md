@@ -110,6 +110,7 @@ macFlow/
 ├── Guest-OS/       # Arch Linux ARM installation
 ├── Integration/    # SSH, SSHFS, and Bridge configuration
 ├── Tools/          # Neovim, VSCode, and Shell setup
+├── VM/             # VMware Fusion installation and configuration
 ├── WM/             # Window Manager (Sway) setup
 ├── LICENSE         # Source code license (MIT)
 ├── LICENSE.md      #
