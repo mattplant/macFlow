@@ -121,7 +121,7 @@ macFlow/
 
 `macFlow` applies a dual‑license model to balance strong copyleft protections with open documentation reuse:
 
-| Component     | License                      | Details                                     |
-| ------------- | ---------------------------- | ------------------------------------------- |
-| Source Code   | [MIT](LICENSE.HIDE)          | See [`LICENSE`](./LICENSE.HIDE).            |
-| Documentation | [CC BY 4.0](LICENSE-DOCS.md) | See [`LICENSE-DOCS.md`](./LICENSE-DOCS.md). |
+| Component     | License       | Details                                |
+| ------------- | ------------- | -------------------------------------- |
+| Source Code   | **MIT**       | [`LICENSE`](./LICENSE)                 |
+| Documentation | **CC BY 4.0** | [`LICENSE-DOCS.md`](./LICENSE-DOCS.md) |
