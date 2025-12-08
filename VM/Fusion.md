@@ -4,7 +4,7 @@ Build notes for using VMware Fusion for virtualization in the `macFlow` project.
 
 ## Install VMware Fusion (*now free*)
 
-Download VMware Fusion from the [thier website](https://www.vmware.com/products/fusion.html).
+Download VMware Fusion from their [website](https://www.vmware.com/products/fusion.html).
 
 *Note that you will need to register for a free account, but the license for personal and business use is now free.*
 
