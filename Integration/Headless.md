@@ -18,7 +18,7 @@ sudo hostnamectl set-hostname macflow
 # Update the hosts file so the system can resolve itself
 sudo nano /etc/hosts
 # Add this entry to bottom of the file (if not already present):
-127.0.1.1        macflow.localdomain macflow
+127.0.0.1        macflow.localdomain macflow
 ```
 
 Install and enable the SSH daemon and Avahi (Bonjour).

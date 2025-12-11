@@ -1,4 +1,13 @@
-# macFlow: Fusion
+# macFlow: Hyprland with VMware Fusion
+
+> NOTE: We were unable to get Hyprland working using VMware Fusion on Apple Silicon (M4) due to fundamental compatibility issues with the graphics stack.
+>
+> See [UTM](./UTM.md) for alternative virtualization options and details.
+
+---
+---
+
+# Original Fusion Notes
 
 Build notes for using VMware Fusion for virtualization in the `macFlow` project.
 
@@ -69,7 +78,3 @@ And install it by following the standard macOS application installation process.
 #### Startup Disk
 
 - Select  `CD/DVD`
-
-## Continue to Arch Linux Installation
-
-Follow the steps in [Arch Linux ARM Installation](../Guest-OS/Arch.md) to start the Linux installation.

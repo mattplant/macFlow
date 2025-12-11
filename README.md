@@ -15,47 +15,47 @@ The core objective is to decouple the *Development Workflow* from the *Operating
 
 The foundational goal is to maintain the reliability of modern Apple Silicon and the macOS ecosystem for everyday use, while leveraging a Linux VM for development tasks.
 
-- **Host Integrity:** We keep `macOS` as the stable host for **critical functions** (Hardware drivers, Battery life, Wi-Fi stability) and high-performance native apps (Zoom, Teams, Office).
+- **Host Integrity:** We keep macOS as the stable host for **critical functions** (Hardware drivers, Battery life, Wi-Fi stability) and high-performance native apps (Zoom, Teams, Office).
 - **VM Performance:** We ensure the Linux environment remains lightweight and disposable.
 
 ### Efficiency & Workflow
 
 The primary reason for using Linux is to gain the mechanical efficiency of a Tiling Window Manager (TWM) without fighting the macOS WindowServer.
 
-- **Keyboard-Centric Flow:** It offers the muscle memory and tiling optimized for software rendering.
+- **Keyboard-Centric Flow:** It offers the muscle memory and tiling windows optimized for development flow.
 - **Development Ready:** A focused environment pre-loaded with **Neovim**, **VSCode**, **Git**, and **Zsh**.
 
 ## Architecture: Office vs. Workbench
 
 We connect the Host and Guest via a network bridge rather than fragile virtualization drivers.
 
-| Domain           | Role              | Responsibility                                                                                                                       |
-| :--------------- | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| **Host** (macOS) | **The Office**    | **Admin**<br>• Communication (Outlook, Slack)<br>• Hardware Abstraction (Wi-Fi, Power)<br>• Security (FileVault, Firewall)           |
-| **Guest** (Arch) | **The Workbench** | **Development Flow**<br>• **TWM:** Sway (Software Rendered)<br>• **Code:** VSCode / Neovim<br>• **Terminal:** Kitty / Zsh / Starship |
+| Domain           | Role              | Responsibility                                                                                                                |
+| :--------------- | :---------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| **Host** (macOS) | **The Office**    | **"Admin."**<br>• Communication (Outlook, Slack)<br>• Hardware Abstraction (Wi-Fi, Power)<br>• Security (FileVault, Firewall) |
+| **Guest** (Arch) | **The Workbench** | **"The Flow."**<br>• **TWM:** Hyprland (VirtIO-GPU)<br>• **Code:** VSCode / Neovim<br>• **Terminal:** Foot / Zsh / Starship   |
 
 ### The Bridge (Integration)
 
-To ensure a seamless flow, `macFlow` uses standard network protocols to bypass missing kernel drivers on Apple Silicon:
+To ensure a seamless flow, `macFlow` uses standard network protocols to bypass driver limitations on Apple Silicon:
 
 - **Files:** macOS `~/macFlow` directory is mounted into the VM via **SSHFS**.
-- **Clipboard:** Copy/Paste is handled via **SSH** from the native macOS terminal.
+- **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
 - **Identity:** Git credentials are passed via **SSH Agent Forwarding**.
 
-## Architecture
+## Design Philosophy: Desktop Mode
 
-For the **Desktop Mode**, instead of fighting for hardware acceleration that is unstable on Apple Silicon VMs, `macFlow` embraces **Sway** using **Software Rendering (Pixman)**.
+For the **Desktop Mode**, we utilize **UTM** to gain access to **Hardware Acceleration** (`virtio-gpu`), but we configure Hyprland for maximum efficiency.
 
-- **The Engine:** We use **Sway** because it natively supports the `pixman` (CPU) renderer without the strict OpenGL requirements that cause Hyprland to crash on this architecture.
-- **The Mechanics:** We keep the "Muscle Memory" (Keybindings, Wofi, Waybar) of a modern Linux desktop but rely on the Apple Silicon single-core performance to brute-force a utilitarian, sharp, and glitch-free interface.
-- **The Trade-off:** We sacrifice "Eye Candy" (Animations, Blur, Drop Shadows) to gain rock-solid stability.
+- **The Engine:** We use Hyprland for its **Dynamic Tiling Engine (Dwindle Layout)**, offering superior automatic layout logic compared to manual tilers.
+- **The Mechanics:** We keep the "Muscle Memory" (Keybindings, Wofi, Waybar) of a modern Linux desktop.
+- **The Trade-off:** We disable **Blur, Drop Shadows, and Animations** to ensure the VM feels responsive and snappy, prioritizing function over form.
 
-### The Flow Experience
+### The "Flow" Experience
 
 The `macFlow` experience is designed to be distraction-free and keyboard-centric along with being modal:
 
-- **Cmd + Tab (to VMware):** You enter the **Flow State**. Distractions are tiled away. You are in a pure Linux environment controlled entirely by the keyboard.
-- **Cmd + Tab (to macOS):** You return to the **Admin State**. You answer emails, join calls, manage calendar events, and create presentations and other Office documents.
+- **Cmd + Tab (to UTM):** You enter the **Flow State**. Distractions are tiled away. You are in a pure Linux environment controlled entirely by the keyboard.
+- **Cmd + Tab (to macOS):** You return to the **Admin State**. You answer emails, join calls, manage calendar events, and create presentations and other Office tasks.
 - **Persistence:** The VM is persistent. You can disconnect, close the lid, or switch contexts, and the Linux layout remains exactly where you left it.
 
 ---
@@ -74,7 +74,7 @@ The `macFlow` experience is designed to be distraction-free and keyboard-centric
 
 - **What it is:** A full Tiling Window Manager environment inside the VM.
 - **Pros:** The complete "Omarchy" tiling experience (Dwindle layout), distraction-free focus.
-- **Cons:** Higher resource usage, requires software rendering configuration.
+- **Cons:** Higher resource usage.
 
 ## Prerequisites
 
@@ -86,16 +86,18 @@ The `macFlow` experience is designed to be distraction-free and keyboard-centric
 
 Every `macFlow` build requires these core steps:
 
-- [**VM Platform:** VMware Fusion Setup](./VM/Fusion.md)
-- [**Guest OS:** Arch Linux ARM Installation](./Guest-OS/Arch.md)
-- [**Integration:** "Headless" Bridge Setup](./Integration/Headless.md)
+- **VM Platform:** [UTM Setup](./VM/UTM.md)
+- **Guest OS:** [Arch Linux ARM Installation](./Guest-OS/Arch.md)
+- **Integration:** ["Headless" Bridge Setup](./Integration/Headless.md)
   - *Includes: SSH Access, File Sharing, and Git Identity.*
 
 ### The Desktop (*Optional*)
 
 Proceed here if you want the graphical Tiling Window Manager flow.
 
-- [**Window Manager:** Sway Setup](./WM/Sway.md)
+- [**Window Manager:** Hyprland Setup](./WM/Hyprland.md)
+  - *Includes: Host Integration (Clipboard), Keybindings, and Dwindle Layout.*
+- [**Visuals:** Waybar & Styling](./WM/Styling.md)
 
 ### The Workbench (*Optional*)
 
@@ -110,19 +112,8 @@ macFlow/
 ├── Guest-OS/       # Arch Linux ARM installation
 ├── Integration/    # SSH, SSHFS, and Bridge configuration
 ├── Tools/          # Neovim, VSCode, and Shell setup
-├── VM/             # VMware Fusion installation and configuration
-├── WM/             # Window Manager (Sway) setup
-├── LICENSE         # Source code license (MIT)
-├── LICENSE.md      #
-├── LICENSE-DOCS.md # Documentation license (CC BY 4.0)
+├── VM/             # UTM configuration
+├── WM/             # Hyprland and Waybar configs
+├── LICENSE         # Source Code License (MIT)
+├── LICENSE-DOCS.md # Documentation License (CC BY 4.0)
 └── README.md       # You are here
-```
-
-## 🏷️ Licensing & Attribution
-
-`macFlow` applies a dual‑license model to balance strong copyleft protections with open documentation reuse:
-
-| Component     | License       | Details                                |
-| ------------- | ------------- | -------------------------------------- |
-| Source Code   | **MIT**       | [`LICENSE`](./LICENSE)                 |
-| Documentation | **CC BY 4.0** | [`LICENSE-DOCS.md`](./LICENSE-DOCS.md) |
