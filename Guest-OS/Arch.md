@@ -1,34 +1,34 @@
-# macFlow: Arch Linux
+# macFlow: Arch Linux with UTM (AArch64)
 
 Build notes and troubleshooting documentation for installing **Arch Linux ARM (ALARM)**.
 
-## Installation Media
+## Initial Boot
 
-We use the **Archboot** ISO instead of the official tarball because it provides an interactive installer (`archboot-setup`) and bootable structure suitable for VMs.
+Boot the VM (`Play` button)
 
-- **Download:** [Archboot AArch64 ISO](https://release.archboot.com/aarch64/latest/iso/)
-- **Mounting:** In VMware Fusion > `macFlow` VM > `Settings` > `CD/DVD`:
-  - Check **"Connect CD/DVD Drive"**
-  - Under `Advanced options`
-    - Set `Device type` to **SATA** (Crucial for ARM compatibility)
-- Close Settings
+## "Display output is not active" Workaround
 
-### Initial Boot
+If when booting the Archboot ISO in UTM, you see the `Display output is not active.` error, then use the serial console to see the installer output.
 
-- Start the VM
+- Open UTM, select your `macFlow` VM but do not start it yet.
+- Click New... > Serial
+- Select `Built-in Terminal`
+- Click Save
+
+When the VM boots, there will be a second window with the serial console.
 
 ## Core Installation (Archboot)
 
 - From the `GNU Grub` menu
   - Select `Launch UEFI Archboot - Arch Linux aarch64`
-- From the Archboot menu
+- From the **Archboot** menu
   - You will see a text screen listing features (Vconsole, Wi-Fi, Quickinst, etc.).
   - Press `ENTER` to login
-    - This logs you in as root and automatically starts the Archboot Launcher/Setup Menu.
+    - This logs you in as root and automatically starts Archboot Launcher/Setup.
     - For `Locale` select `en-US English`
-    - For `Network Interface` select `enp2s0`
-    - For `Network Profile Name` go with the default of 'enp2S0-ethernet'
-      - This sets the `Network profile` to `/etc/systemd/network/enp2s0-ethernet.network`
+    - For `Network Interface` select `enp0s1`
+    - For `Network Profile Name` go with the default of 'enp0s1-ethernet'
+      - This sets the `Network profile` to `/etc/systemd/network/enp0s1-ethernet.network`
     - For `Network Configuration` select `DHCP`
     - Leave the `Proxy Configuration` blank
   - On `Summary` screen, review settings and select `Yes` to apply.
@@ -36,24 +36,29 @@ We use the **Archboot** ISO instead of the official tarball because it provides 
 
 ### Partitioning (Quick Setup)
 
-From the Launcher Menu, select **`Quick Setup`**
-
-- **Disk:** `/dev/nvme0n1`
-- **Device Name Scheme:** `FSUUID` *(Industry standard for persistent block device naming)*
-- **EFI System Partition (ESP):** `/boot (single boot)`
-  - **EFI Size:** `1024 MB`
-  - **Swap:** `0` *(we won't use swap)*
-  - For `File System and Home` select `BTRFS`
-    - Confirm using BTFRFS with selecting `Yes`
-  - For `/ in MiB` enter `0` *(Uses whats left of the disk)*
-  - Confirm using "dev/nvme0n1" to wipe and partition
+- From the **Launcher** menu, select **`Launch Archboot Setup`**
+  - From the **Setup** menu, select **`Prepare Storage Device`**
+  - From the **Prepare Storage Device menu**, select **`Quick Setup`**
+    - For the size of the disk, enter `40G` *(40 GB)*
+      - *Note:* UTM uses a VirtIO disk that appears as `/dev/vda`
+    - **Device Name Scheme:** `FSUUID` *(Industry standard for persistent block device naming)*
+    - **EFI System Partition (ESP):** `/boot (single boot)`
+      - **EFI Size:** `1024` *(1 GB)*
+      - **Swap:** `0` *(we won't use swap)*
+      - For `File System and Home` select `Btrfs`
+        - Confirm using BTRFS by selecting `Yes`
+      - For `/ in MiB` enter `0` *(Uses whats left of the disk)*
+        - Confirm using whatever space is left by selecting `Yes`
+      - Confirm wipe and partition of "/dev/vda" by selecting `Yes`
 
 ### Package Selection
 
-From the Launcher Menu, select **`Install Packages`**
+From the **Launcher** menu, select **`Install Packages`**
 
 - Confirm installation of these required packages for minimum system by selecting `Yes`
+  - `base` - core OS packages
   - `iptables-nft` - firewall utilities
+  - `linux` - Linux kernel
   - `polkit` - privilege management
   - `btrfs-progs` - BTRFS filesystem tools
   - `dosfstools` - DOS filesystem utilities
@@ -61,78 +66,62 @@ From the Launcher Menu, select **`Install Packages`**
 
 ### Configuration
 
-From the Launcher Menu, select **`Configure System`**
+From the **Launcher** menu, select **`Configure System`**
 
 - **Root Password:** Set root password
 - **Default Editor:** Select `Nano` (easy for beginners or whatever you prefer)
 - **Init System:** Select `systemd` (mkinitcpio will be configured automatically)
-- **Shell:** Select `bash`
-- **User:** Create your user (e.g., `macflow`)
-- go thru each system config option and accept defaults except where called out below:
-  - for hostname set to `macflow`
-  - for additional packages add
-    - `base-devel` - development tools (sudo, gcc, make, etc.)
-    - `git` - version control
+- From the **System Configuration**` menu
+  - For the **User Management** menu
+    - For **Default Shell**, select `bash`
+    - For **Create User Account**, enter `macflow`
+      - Add to `wheel` group for sudo access
+      - For comment, enter `macFlow is the best` or your full name :)
+      - Enter and confirm user password
+      - Return to `System Configuration`
+    - Go thru each system config option and accept defaults except where called out below:
+      - Set **System Hostname** to `macflow`
+      - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
+      - Return to `Main Menu`
 
 ### Install Bootloader
 
-- Select `Install Bootloader` from the Archboot "Setup Menu"
+- Select `Install Bootloader` from the Archboot **Setup Menu**
   - For `AA64 UEFI Bootloader` select `GRUB_UEFI`
     - *WHy?* Safer recovery method, easy confiig format and snapshot (future proofing)
 
 ### Finish Installation
 
-From the Launcher Menu, select **`Exit Menu`
-
-- Select `Poweroff System`
-  - *Why?* This provides a clean stop, allowing you to eject the ISO from VMware settings so your first boot actually goes to your new Arch Linux hard drive.`
+- From the **Setup Menu**, select **`Exit`
+  - Select `Poweroff System`
+    - *Why?* This provides a clean stop, allowing you to eject the ISO from VMware settings so your first boot actually goes to your new Arch Linux hard drive.`
 - Prevent the VM from booting back into the Archboot ISO:
-  - Go to `Virtual Machine` > `Settings` > `CD/DVD`
-  - Uncheck **"Connect CD/DVD Drive"**
-  - Start the VM again
+  - On the `macFlow` VM in UTM, expand out the `CD/DVD` section and click `Clear`
 
 ## Post-Install Configuration
 
-### Network & Sudo
+- Start the VM again
+- From the `GNU Grub` menu, select `Arch Linux`
 
-```bash
-# Login as the user you created (e.g., macflow)
+### Font Rendering Fix
 
-# Enable Networking (*If not already active*)
-sudo systemctl enable --now NetworkManager
+If your console text looks garbled then done't panic. It is a common issue with the default font and can easily fixed with these steps:
 
-# Verify Connectivity
-ping -c 3 archlinux.org
-```
+- Log in "Blindly"
+  - You are being asked for your login. Enter `macflow` and press Enter
+  - Type your password and press Enter
+  - Type `reset` and press Enter (to clear any garbled text)
 
-### Make Console Font Readable
+This is a temporary fix to for this session only. We will make a permanent below.
 
-The TTY is currently rendering at native 4K resolution (microscopic text). We need to install and configure a specialized HiDPI console font (Terminus).
-
-```bash
-# Install Terminus Font
-sudo pacman -Syu terminus-font
-
-# Edit vconsole.conf
-sudo nano /etc/vconsole.conf
-# Set: FONT=ter-132n
-
-# Apply immediately
-sudo systemctl restart systemd-vconsole-setup
-```
-
-### Install base-devel and git
-
-If you missed selecting `base-devel` and `git` during the installation, fix it now by temporarily switching to the root user.
-
-TODO: Verify that we can remove this step if we selected during install.
+### Sudo Installation and Configuration
 
 ```bash
 # Switch to root
 su -
 
-# Install core development tools (if missing)
-pacman -Syu base-devel git
+# Install sudo
+pacman -Syu sudo
 
 # Configure Sudo
 EDITOR=nano visudo
@@ -140,11 +129,27 @@ EDITOR=nano visudo
 # (Press Ctrl+O to save, Ctrl+X to exit)
 
 # Ensure your user is in the wheel group
-# Replace 'macflow' with your actual username if you used a different one
 usermod -aG wheel macflow
 
 # Return to your standard user
 exit
+```
+
+### Make Console Font Readable
+
+Now we tell the system to use a font that supports High DPI (Retina) and standard encoding.
+
+```bash
+# Install Terminus Font
+sudo pacman -Syu terminus-font
+
+# Edit vconsole.conf
+sudo nano /etc/vconsole.conf
+# While we are at it we can double it for retina/4k display
+# Set: FONT=ter-132n
+
+# Apply immediately
+sudo systemctl restart systemd-vconsole-setup
 ```
 
 ### Package Management: Installing `yay`
@@ -157,106 +162,155 @@ While `pacman` is the official package manager for Arch Linux, we install `yay` 
 - **Unified Workflow:** `yay` mirrors `pacman` syntax. You can use it for everything (system updates, searching, installing).
 - **Automation:** It handles the complex process of cloning `git` repos, compiling code (`makepkg`), and installing dependencies automatically.
 
+#### Pre-requisites
+
+Ensure the core build tools are installed.
+
+```bash
+# Install git and base-devel group
+# --needed: Skips packages that are already up-to-date
+sudo pacman -Syu --needed git base-devel
+```
+
 #### Installation
 
 We must compile `yay` manually once to bootstrap it.
 
+*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
+
 ```bash
-# Clone and Install
+# \Clone the repository
 cd ~
 git clone https://aur.archlinux.org/yay.git
+
+# Build and Install
 cd yay
 makepkg -si
 
-# Cleanup
+#  Cleanup
 cd ..
 rm -rf yay
 ```
 
-### Harden Time Sync
+### Install UTM/QEMU Drivers
 
-VMware Tools provides basic time synchronization, but it can lag when the host macOS wakes from sleep. To make the clock bulletproof, we enable the native Linux Network Time Protocol (NTP) service as a backup.
+Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration (`virtio-gpu`), clipboard synchronization (`spice`), and host communication.
 
-```bash
-# Enable systemd-timesyncd service
-sudo systemctl enable --now systemd-timesyncd
-```
-
-## VMware Integration and Drivers
-
-### Install open-vm-tools (Build from Source)
-
-We install `open-vm-tools` to enable **Time Synchronization** (critical for git/ssl), **Power Management** (clean shutdowns from the Fusion menu), and to assist the kernel with display state.
-
-*Note:* The standard `pacman -S open-vm-tools` fails on ARM because it is missing from the official ALARM repositories. We must compile it using the official Arch Linux build scripts.
+### Install Packages
 
 ```bash
-# Install Build Dependencies
-# mesa: Required for OpenGL headers
-# gtkmm3/gtk3: Required for the userspace plugins to compile
-# libx*: Required for resolution helper libraries
-sudo pacman -S --needed mesa gtkmm3 gtk3 libxtst libxinerama libxrandr
-
-# Clone the Official Arch Linux Package Source
-cd ~
-git clone https://gitlab.archlinux.org/archlinux/packaging/packages/open-vm-tools.git
-cd open-vm-tools
-
-# Patch for ARM Support
-# The official package is restricted to x86_64. We add 'aarch64' to the allow list.
-sed -i "s/arch=('x86_64')/arch=('x86_64' 'aarch64')/" PKGBUILD
-
-# Build and Install
-makepkg -si
+# - mesa: Provides the virtio-gpu driver for 3D acceleration
+# - spice-vdagent: Handles Clipboard Sync and Auto-Resolution resizing
+# - qemu-guest-agent: Allows UTM to send Shutdown/Reboot commands cleanly
+yay -S mesa spice-vdagent qemu-guest-agent
 ```
 
-### Enable Services
+#### Configure MKINITCPIO (The Boot Image)
 
-Start the `open-vm-tools` background service that communicates with the host.
+We need to force the kernel to load the virtio-gpu module early in the boot process so it takes over the screen from the EFI framebuffer.
+
+Edit the config:
 
 ```bash
-# Main tools daemon
-# Handles Time Sync, Graceful Power Operations (Shutdown/Reboot), and OS Heartbeat.
-# (Note: Clipboard and Auto-Resolution will be handled later via SSH/Manual Config due to missing VMCI drivers)
-sudo systemctl enable --now vmtoolsd
+sudo nano /etc/mkinitcpio.conf
+# Add modules: Find the MODULES=() line and and add the following:
+# virtio virtio_pci virtio_blk virtio_net virtio_gpu
+# e.g. MODULES=(btrfs vfat crc32c virtio virtio_pci virtio_blk virtio_net virtio_gpu)
+# Save and Exit.
+
+# Regenerate images:
+mkinitcpio -P
 ```
 
-### Verification
+#### Enable Services
 
-Verify that the `open-vm-tools` service is running and the kernel has loaded the graphics drivers correctly.
+Enable the background daemons so they start automatically on boot.
 
 ```bash
-# Check Service Status
-# Look for 'Active: active (running)' in green
-systemctl status vmtoolsd
+# Enable QEMU Guest Agent for Host-Guest communication
+#sudo systemctl start qemu-guest-agent
 
-# Check Graphics Driver
-# You should see 'vmwgfx' listed. This confirms the kernel sees the display adapter.
-lsmod | grep vmwgfx
-
-# Verify Graphics Hardware
-# Should report: "VMware SVGA II Adapter (Fusion)"
-lspci -k | grep -A 2 -E "VGA|3D|Display"
+# Enable Spice Agent for Clipboard Sync and Auto-Resize
+#sudo systemctl start spice-vdagentd
 ```
 
-## Architecture Constraints: The VMCI Gap
+### Configure UTM for Graphics (The Switch)
 
-A core constraint of running Arch Linux ARM on VMware Fusion (Apple Silicon) is the absence of the `vmw_vmci` driver.
+Now that the drivers are installed, we must configure the VM to use the 3D-accelerated GPU.
 
-The **Virtual Machine Communication Interface** (`vmw_vmci`) is VMware's proprietary driver for high-speed host-guest communication. It is **not included** in the default kernel builds for Arch Linux ARM. Without this driver, the `open-vm-tools` features that rely on a direct line to the Host OS will not function:
+- Poweroff the VM: `sudo poweroff`
+- Open UTM Settings for the VM
+  - Navigate to Display
+  - Change Emulated Display Card to: `virtio-gpu-gl-pci`
+    - *Why:* This card supports OpenGL hardware acceleration using the Apple Metal backend.
+- Start the VM
 
-- **Clipboard Sync:** Sending text/images between macOS and Linux memory buffers.
-- **Auto-Resolution:** Sending the signal *"The window size just changed"* so the Guest can reflow instantly.
-- **Drag and Drop:** Moving files across the VM border via the GUI.
-- **Unity Mode:** (On Windows/Intel) Allowing Guest apps to float on the Host desktop.
+*Note:* You should now see the boot text appear on the Main Window (graphical), not just the Serial console.
 
-### The "Air-Gapped" UI Consequence
+===
 
-Because `vmw_vmci` is missing, the GUI effectively operates in an "Air-Gapped" state regarding data transfer:
+We need to undo the gfxterm change inside GRUB, but keep the console=tty1 change for the Linux Kernel. We want GRUB to be simple text (which works), but we want Linux to take over the screen once it loads.
 
-| Feature           | Status        | Workaround                                                    |
-| :---------------- | :------------ | :------------------------------------------------------------ |
-| **Data Exchange** | ❌ **Broken**  | Clipboard and File Sharing handled via **SSH** and **SSHFS**. |
-| **Auto-Resize**   | ❌ **Broken**  | Resolution must be set manually (see below).                  |
-| **Video Output**  | ✅ **Working** | `vmwgfx` driver handles rendering.                            |
-| **Input**         | ✅ **Working** | Standard USB Mouse/Keyboard emulation.                        |
+---
+
+CRITICAL: Driver Fix (Before Reboot)
+Do not reboot yet. We need to ensure the new system has the graphics drivers installed so the main window works next time.
+
+Select Shell (or "Exit to Shell") from the menu to get a command prompt (#).
+
+Chroot into your new drive:
+
+Bash
+
+# The installer usually mounts target to /mnt
+arch-chroot /mnt
+Install Graphics Drivers:
+
+Bash
+
+pacman -S mesa
+Force Drivers into Boot Image: Edit the initramfs config:
+
+Bash
+
+nano /etc/mkinitcpio.conf
+Find MODULES=().
+
+Change to: MODULES=(virtio virtio_pci virtio_blk virtio_net virtio_gpu)
+
+Save and Exit.
+
+Regenerate Boot Image:
+
+Bash
+
+mkinitcpio -P
+Fix GRUB (Enable Graphics): Edit the GRUB config:
+
+Bash
+
+nano /etc/default/grub
+Find GRUB_TERMINAL_OUTPUT=console.
+
+Change to #GRUB_TERMINAL_OUTPUT=console (Comment it out).
+
+Add/Uncomment GRUB_TERMINAL_OUTPUT=gfxterm.
+
+Save and Exit.
+
+Update GRUB: grub-mkconfig -o /boot/grub/grub.cfg
+
+🏁 Finish
+Type exit (to leave chroot).
+
+Type poweroff.
+
+UTM Settings: Remove the Serial device.
+
+Start.
+
+====
+
+Previously I was missing linux-kernel headers which are required for some AUR packages.
+# Force reinstall of kernel and firmware
+pacman -S linux linux-firmware

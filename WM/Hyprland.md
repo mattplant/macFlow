@@ -2,41 +2,6 @@
 
 Build notes for installing and configuring **Hyprland** in the `macFlow` project.
 
-> **Strategy: "Brutalist Hyprland"**
-> To run smoothly on the Apple Silicon CPU (Software Rendering), we strictly disable the render pipeline features.
->
-> - **Animations/Blur/Shadows:** OFF (Saves CPU/GPU cycles)
-> - **Layout:** Dwindle (The "Omarchy" automatic tiling behavior)
-> - **Renderer:** `pixman` (Forced via environment variable)
-
-## ⛔ Compatibility Notice: Hyprland on Apple Silicon VM
-
-**Current Status:** **Incompatible / Not Recommended**
-
-Despite extensive configuration attempts, Hyprland is currently inviable on Arch Linux ARM running within VMware Fusion on Apple Silicon (M4).
-
-### 1. Modern Hyprland (v0.52+ / Aquamarine)
-
-- **Result:** Runtime Crash (Segmentation Fault).
-- **The Error:** `[ERR] [AQ] [EGL] Command eglInitialize errored out... DRI2: failed to create screen`.
-- **Root Cause:** Hyprland's internal rendering engine (**Aquamarine**) requires a compliant OpenGL/EGL context with specific DRM/GBM buffer management capabilities.
-- **The Hardware Gap:** The VMware ARM graphics driver (`vmwgfx`) combined with the `llvmpipe` software renderer cannot satisfy these strict requirements. Even with "Nuclear" software overrides (`WLR_RENDERER_ALLOW_SOFTWARE=1`, `MESA_LOADER_DRIVER_OVERRIDE=llvmpipe`), the EGL initialization handshake fails, causing the compositor to segfault immediately on launch.
-
-### 2. Legacy Hyprland (v0.40 / wlroots)
-
-- **Result:** Compilation Failure.
-- **The Error:** `error: too few arguments to function ‘liftoff_output_apply’`.
-- **Root Cause:** **Library Drift.** The legacy source code relies on older versions of `wlroots` and `libliftoff`. Because Arch Linux is a rolling release, the system libraries have updated to newer API standards that are incompatible with the old source code.
-- **The Cost:** Fixing this requires manually patching C code in the dependency tree, which violates the "Low Maintenance" goal of MacFlow.
-
-### Verdict: Use Sway
-
-**Sway** is the recommended Tiling Window Manager for this architecture.
-
-- It natively supports the **Pixman** renderer (Pure CPU rendering).
-- It does not require EGL/OpenGL to function.
-- It is stable, performant on the M4 CPU, and available in standard repositories.
-
 ## Install Hyprland & Tools
 
 Install the compositor and the necessary ecosystem tools.
@@ -62,6 +27,9 @@ yay -S waybar dunst wofi hyprpaper pipewire-jack
 # - ttf-jetbrains-mono-nerd: Developer font
 # - ttf-dejavu: UI Fallback font
 yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
+
+# Optional: Configuration tools to make Qt apps look like GTK apps
+yay -S qt5ct qt6ct
 ```
 
 ## Environment Variables
@@ -73,50 +41,97 @@ Before configuring Hyprland, ensure your shell profile tells it to use Software 
 - Add/verify these lines exist:
 
 ```bash
-# Force Software Rendering (Stable on Apple Silicon VMs)
-export WLR_RENDERER=pixman
+# Fix invisible mouse cursor
+export WLR_NO_HARDWARE_CURSORS=1
 
 # Hyprland Specific: Tell Hyprland it is okay to use the CPU (Unlocks the gate)
 export WLR_RENDERER_ALLOW_SOFTWARE=1
-
-# Fix invisible mouse cursor (VMware bug)
-export WLR_NO_HARDWARE_CURSORS=1
 ```
 
 - Reload: ```source ~/.bash_profile```
 
+## Fix: Hyprland Crashes on Startup
+
+### Problem: Hyprland Fails to Start with Seat Error
+
+When you try to launch Hyprland, it immediately exits with an
+Error: "No backend was able to open a seat".
+
+This means Hyprland (specifically the Aquamarine backend) is trying to access the hardware (the "Seat"), but it is being blocked by a permissions issue or a missing service.
+
+Hyprland relies on seatd or logind (part of systemd) to gain access to the GPU/Input devices without being root. Since seatd failed and logind failed, Hyprland has no permission to draw to the screen, so it crashes.
+
+### The Fix: Grant Seat Permissions
+
+We need to ensure your user (macflow) is in the correct group (seat) and that the seatd service is running.
+
+```bash
+# Install seatd (if missing)
+sudo pacman -S seatd
+
+# Add user to seat group
+sudo usermod -aG seat macflow
+
+# Enable and Start the seatd service
+sudo systemctl enable --now seatd
+
+# Reboot
+# Group changes require a re-login/reboot to take effect.
+sudo reboot
+```
+
 ## The "Brutalist" Configuration
 
-We will create a config that forces the "Omarchy"-like layout but strips the heavy visuals.
+We will create a config that forces the "Omarchy"-like layout but strip the heavy visuals.
+
+This configuration assumes:
+
+- **UTM Settings:** Display is set to `virtio-gpu-gl-pci` (not `ramfb`).
+- **Drivers:** You installed mesa, spice-vdagent, and hyprland.
+- **Philosophy:** "Brutalist" (No blur/shadows/animations) for maximum stability on the VM.
 
 - Create Directory: ```mkdir -p ~/.config/hypr```
 - Edit Config: ```nano ~/.config/hypr/hyprland.conf```
 - Paste the following:
 
 ```bash
-# --- macFlow: Brutalist Hyprland Config ---
+# --- MacFlow: Hyprland with UTM / VirtIO Config ---
 
-# Display (Manual Retina Scaling)
-# Since VMCI is missing, we hardcode the resolution.
-# Use 'wlr-randr' to find supported modes if 2560x1600 doesn't work.
-monitor=Virtual-1, 2560x1600@60, 0x0, 2
+# Display: Dynamic Resizing (The UTM Advantage)
+# "preferred" tells Hyprland to use whatever resolution the UTM window is resized to.
+# "auto" positions it automatically.
+# "2" scales it for Retina (HiDPI). Change to "1" if you want massive screen real estate.
+monitor=,preferred,auto,2
 
 # Input (Mac Feel)
 input {
     kb_layout = us
     follow_mouse = 1
-    natural_scroll = true
 
+    # Natural Scrolling for Mouse and Trackpad
+    natural_scroll = true
     touchpad {
         natural_scroll = true
+        tap-to-click = true
     }
 }
+    # Sensitivity (Optional tweak for VM mouse feel)
+    sensitivity = 0
+}
+
+# 3. VM Integration (Critical)
+# Fix for invisible cursor on VMs
+env = WLR_NO_HARDWARE_CURSORS,1
+
+# Start SPICE Agent for Clipboard & Auto-Resize
+exec-once = systemctl --user start spice-vdagent
 
 # Layout (The "Omarchy" Dwindle)
 general {
     gaps_in = 5
     gaps_out = 10
     border_size = 2
+
     # Mac-like colors (Blue/Green active, Grey inactive)
     col.active_border = rgba(33ccffee) rgba(00ff99ee) 45deg
     col.inactive_border = rgba(595959aa)
@@ -130,7 +145,7 @@ dwindle {
 }
 
 # Performance (THE BRUTALIST SECTION)
-# CRITICAL: Disable "Eye Candy" to run smoothly on Apple Silicon CPUs
+# Disable expensive effects for rock-solid VM performance
 decoration {
     rounding = 5
     blur {
@@ -155,7 +170,8 @@ misc {
 $terminal = foot
 $menu = wofi --show drun
 
-# Keybindings (Command Key = SUPER)
+# Keybindings
+# (Command Key = SUPER)
 $mainMod = SUPER
 
 # Apps
@@ -183,10 +199,12 @@ bind = $mainMod SHIFT, l, movewindow, r
 bind = $mainMod SHIFT, k, movewindow, u
 bind = $mainMod SHIFT, j, movewindow, d
 
-# 6. Autostart Services
+# Autostart Services
 exec-once = dunst
 exec-once = waybar
 exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+# Mount Mac files (using the function from .bash_profile doesn't work here, use raw command)
+# exec-once = sshfs ... (Add your mount command here if you want auto-mount)
 ```
 
 ### Mount macOS Shared Folder if Needed
@@ -205,10 +223,151 @@ exec-once = fusermount3 -u ~/macFlow; sshfs matt@CSW020.local:/Users/matt/macFlo
 From the TTY (Login screen):
 
 ```bash
-Hyprland
+dbus-run-session Hyprland
 ```
 
-*Note the Capital "H" in the command.*
+---
+
+## Host Integration (Clipboard & Resize)
+
+Due to race conditions and broken internal X11/Wayland bridging on ARM64, we need dedicated scripts to handle the Host-Guest communication via the X11 backend.
+
+### Install Dependencies
+
+Tools to bridge the X11 and Wayland clipboards.
+
+```bash
+yay -S xclip clipnotify
+```
+
+#### XWayland Configuration
+
+We explicitly enable XWayland and disable scaling to ensure legacy X11 apps (like the SPICE agent) render correctly on Retina displays.
+
+```bash
+# Ensure XWayland is installed
+yay -S xorg-xwayland
+```
+
+*Note:* See below for Hyprland config changes.
+
+### Disable Default Autostart
+
+Prevent the system from launching the unconfigured agent.
+
+```bash
+mkdir -p ~/.config/autostart
+cp /etc/xdg/autostart/spice-vdagent.desktop ~/.config/autostart/
+echo "Hidden=true" >> ~/.config/autostart/spice-vdagent.desktop
+```
+
+### Create Support Scripts
+
+#### The Smart Watchdog (Mac ➔ VM)
+
+- **File:** ~/.local/bin/clipboard-sync
+- **Logic:** Watches X11. If it changes (and isn't empty), syncs to Wayland.
+
+```bash
+#!/bin/bash
+export DISPLAY=:0
+export WAYLAND_DISPLAY=wayland-1
+LOG="/tmp/clipboard-sync.log"
+
+while clipnotify -s clipboard; do
+    X_CONTENT=$(xclip -o -selection clipboard 2>/dev/null)
+
+    # Safety: Ignore empty X11 buffers to prevent clobbering Wayland
+    if [ -n "$X_CONTENT" ]; then
+        W_CONTENT=$(wl-paste 2>/dev/null)
+        if [ "$X_CONTENT" != "$W_CONTENT" ]; then
+            echo -n "$X_CONTENT" | wl-copy 2>/dev/null
+        fi
+    fi
+done
+```
+
+#### The Export Helper (VM ➔ Mac)
+
+- **File:** ~/.local/bin/clipboard-export
+- **Logic:** Pauses the watchdog to prevent loops, writes to X11, then resumes.
+
+```bash
+#!/bin/bash
+export DISPLAY=:0
+
+# Pause the watchdog
+pkill -STOP -f "clipboard-sync"
+
+# Write to X11 (Clipboard + Primary)
+CONTENT=$(wl-paste)
+echo -n "$CONTENT" | xclip -i -selection clipboard
+echo -n "$CONTENT" | xclip -i -selection primary
+
+# Resume the watcher
+pkill -CONT -f "clipboard-sync"
+```
+
+#### The Master Starter (start-spice)
+
+- **File:** ~/.local/bin/start-spice
+- **Logic:** Waits for XWayland socket before launching components.
+
+```bash
+#!/bin/bash
+LOG="/tmp/spice-debug.log"
+
+# 1. Aggressive Cleanup
+killall -9 spice-vdagent clipboard-sync 2>/dev/null
+sleep 0.5
+
+# 2. Wait for XWayland Socket
+for i in {1..40}; do
+    if [ -e /tmp/.X11-unix/X0 ]; then
+        break
+    fi
+    sleep 0.5
+done
+
+# 3. Start Components
+(export DISPLAY=:0; ~/.local/bin/clipboard-sync) &
+
+export GDK_BACKEND=x11
+export DISPLAY=:0
+exec spice-vdagent -x >> $LOG 2>&1
+```
+
+### Make Scripts Executable
+
+```bash
+chmod +x ~/.local/bin/clipboard-sync ~/.local/bin/clipboard-export ~/.local/bin/start-spice
+```
+
+### Update Hyprland Config
+
+Add the following to `~/.config/hypr/hyprland.conf`:
+
+```bash
+
+# XWayland Configuration
+xwayland {
+    enabled = true
+    force_zero_scaling = true
+}
+
+#...
+
+# Keybinding for Manual Export (VM -> Mac)
+bind = $mainMod SHIFT, C, exec, ~/.local/bin/clipboard-export
+
+#...
+
+# Autostart Spice Agent (Host Integration)
+# Update Environment
+exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+# Launch Host Integration
+exec-once = /home/macflow/.local/bin/start-spice
+```
 
 ## Display Configuration (Troubleshooting & Fine-Tuning)
 
