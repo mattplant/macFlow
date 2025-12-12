@@ -85,4 +85,4 @@ From the **Launcher** menu, select **`Configure System`**
 
 ## Continue to Arch Linux Configuration
 
-Follow the steps in [Arch Linux Configuration](./Arch-Configure.md) to configure Arch Linux for macFlow.
+Follow the steps in [Arch Linux Configuration](../Guest-OS/Arch-Configure.md) to configure Arch Linux for macFlow.

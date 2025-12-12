@@ -86,24 +86,24 @@ Every `macFlow` build requires these core steps:
 
 - **VM Platform:** [UTM Setup](./VM/UTM.md)
 - **Guest OS:**
-  - [Arch Linux (ARM) Installation](./Guest-OS/Arch-Install.md)
-  - [Arch Linux (ARM) Configuration](./Guest-OS/Arch-Configure.md)
-- **Integration:** ["Headless" Bridge Setup](./Integration/Headless.md)
+  - [Arch Linux (ARM) Installation](./Docs/Guest-OS/Arch-Install.md)
+  - [Arch Linux (ARM) Configuration](./Docs/Guest-OS/Arch-Configure.md)
+- **Integration:** ["Headless" Bridge Setup](./Docs/Integration/Headless.md)
   - *Includes: SSH Access, File Sharing, and Git Identity.*
 
 ### The Desktop (*Optional*)
 
 Proceed here if you want the graphical Tiling Window Manager flow.
 
-- [**Window Manager:** Hyprland Setup](./WM/Hyprland.md)
+- [**Window Manager:** Hyprland Setup](./Docs/WM/Hyprland.md)
   - *Includes: Host Integration (Clipboard), Keybindings, and Dwindle Layout.*
-- [**Visuals:** Waybar & Styling](./WM/Styling.md)
+- [**Visuals:** Waybar & Styling](./Docs/WM/Styling.md)
 
 ### The Workbench (*Optional*)
 
 Install the tools to enable efficient development work.
 
-- [**Development Tools:** Neovim, VSCode, & Terminals](./Tools/Development.md)
+- [**Development Tools:** Neovim, VSCode, & Terminals](./Docs/Tools/Development.md)
 
 ## Directory Structure
 
