@@ -2,7 +2,7 @@
 
 > NOTE: We were unable to get Hyprland working using VMware Fusion on Apple Silicon (M4) due to fundamental compatibility issues with the graphics stack.
 >
-> See [Arch](./Arch.md) for installing Arch Linux ARM on alternate VM platform.
+> See [Arch](./Arch-Install.md) for installing Arch Linux ARM on alternate VM platform.
 
 ---
 ---
