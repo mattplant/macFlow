@@ -1,0 +1,28 @@
+#!/bin/bash
+export DISPLAY=:0
+export WAYLAND_DISPLAY=wayland-1
+
+LOG="/tmp/clipboard-sync.log"
+echo "[$(date)] Watchdog Started" > $LOG
+
+# The loop relies on clipnotify to pause execution until a change happens
+while clipnotify -s clipboard; do
+    # 1. Read X11 (From Mac)
+    X_CONTENT=$(xclip -o -selection clipboard 2>/dev/null)
+
+    # 2. Safety: If X11 is empty, DO NOT SYNC (Protects local copy)
+    if [ -z "$X_CONTENT" ]; then
+        echo "X11 Empty - Ignoring" >> $LOG
+        continue
+    fi
+
+    # 3. Read Wayland to compare
+    W_CONTENT=$(wl-paste 2>/dev/null)
+
+    # 4. Sync only if different
+    if [ "$X_CONTENT" != "$W_CONTENT" ]; then
+        echo -n "$X_CONTENT" | wl-copy 2>/dev/null
+        echo "[$(date)] Synced X11 -> Wayland" >> $LOG
+    fi
+done
+

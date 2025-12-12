@@ -1,0 +1,49 @@
+#!/bin/bash
+# MacFlow SPICE Launcher
+# Logs to /tmp/spice-debug.log for troubleshooting
+
+LOG="/tmp/spice-debug.log"
+echo "--- Starting MacFlow SPICE Orchestrator at $(date) ---" > $LOG
+
+# Cleanup old processes aggressively
+echo "[$(date)] Killing old agents..." >> $LOG
+killall -9 spice-vdagent 2>/dev/null
+killall clipboard-sync 2>/dev/null
+
+# Wait a split second to ensure the socket is freed
+sleep 1
+
+# WAIT for XWayland (The Critical Fix)
+# Loop until the X11 socket appears, checking every 0.5s
+echo "[$(date)] Waiting for X11 socket..." >> $LOG
+for i in {1..40}; do # Timeout after 20 seconds
+    if [ -e /tmp/.X11-unix/X0 ]; then
+        echo "[$(date)] X11 Socket found!" >> $LOG
+        # Give XWayland time to initialize internals
+	sleep 3
+        break
+    fi
+    sleep 0.5
+done
+
+# Safety check: Did we timeout?
+if [ ! -e /tmp/.X11-unix/X0 ]; then
+    echo "[$(date)] ERROR: X11 socket never appeared. Aborting." >> $LOG
+    exit 1
+fi
+
+# Start the Sync Watchdog (Background)
+echo "[$(date)] Launching Watchdog..." >> $LOG
+# We create a subshell to isolate variables
+(
+    export DISPLAY=:0
+    export WAYLAND_DISPLAY=wayland-1 
+    ~/.local/bin/clipboard-sync >> /tmp/clipboard-sync.log 2>&1
+) &
+
+# Start the Agent (Force X11 Backend)
+echo "[$(date)] Launching Agent..." >> $LOG
+export GDK_BACKEND=x11
+export DISPLAY=:0
+# Run in foreground (-x) so we capture errors to the log
+exec spice-vdagent -x >> $LOG 2>&1
