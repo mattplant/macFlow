@@ -53,9 +53,13 @@ In the Settings window that appears, apply these specific changes to support Hyp
 
 - **Display (Enable 3D):**
   - **Emulated Display Card:** Select `virtio-gpu-gl-pci`.
-    - *Why:* Why: This card supports OpenGL hardware acceleration using the Apple Metal backend without the legacy framebuffer conflicts of `ramfb`.
-  - Check **Retina Mode**
-    - *Why:* Provides High DPI scaling for crisp text in Hyprland.
+    - *Why:* This card supports OpenGL hardware acceleration using the Apple Metal backend without the legacy framebuffer conflicts of `ramfb`.
+  - Verify that `GPU Acceleration Supported` is checked.
+  - Check `Resize display to window size automatically`
+    - *Why:* Allows the SPICE agent to dynamically resize the VM resolution when you resize the UTM window.
+  - **Upscaling:** Set to `Linear` if you want to allow fractional scaling.
+  - Check `Retina Mode`
+    - *Why:* Required to unlock resolutions higher than 1280x800 (HiDPI).
 - **Network:**
   - **Network Mode:** `Bridged (Advanced)`
   - *Why:* Gives the VM a distinct IP address on the LAN, allowing for seamless SSH connections and reliable file mounting.

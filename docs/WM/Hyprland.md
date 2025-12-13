@@ -28,7 +28,7 @@ yay -S waybar dunst wofi hyprpaper pipewire-jack
 # - ttf-dejavu: UI Fallback font
 yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
 
-## Host Integration (Clipboard & Resize)
+# Host Integration (Clipboard & Resize)
 # - xclip: Clipboard sync
 # - clipnotify: Clipboard watcher
 # - xorg-xwayland: Ensure XWayland is available for legacy X11 apps (like the SPICE agent)
@@ -69,7 +69,7 @@ Link the configurations from the repo to your system:
 cd ~/macFlow/dotfiles
 
 # 1. Link Window Manager & UI (Hyprland, Waybar, Wofi, Dunst)
-stow -t ~hypr
+stow -t ~ hypr
 
 # 2. Link Shell & Terminal (Foot)
 stow -t ~ shell foot
@@ -78,7 +78,7 @@ stow -t ~ shell foot
 stow -t ~ scripts
 ```
 
-*Result:* The config files are now symlinks to the repo. Not is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
+*Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
 
 ## Configuration Breakdown
 
@@ -162,6 +162,15 @@ sudo systemctl enable --now seatd
 sudo reboot
 ```
 
+## Setting for Multiple Monitors
+
+In your Hyprland config (`~/.config/hypr/hyprland.conf`) set it to your largest resolution.
+
+```bash
+monitor = , 3840x2160, auto, 2
+#monitor = , 2880x1864, auto, 2
+```
+
 ## Launch Hyprland
 
 From the TTY (Login screen):
@@ -170,27 +179,26 @@ From the TTY (Login screen):
 dbus-run-session Hyprland
 ```
 
-## Display Configuration (Troubleshooting & Fine-Tuning)
+## Adjust Resolution
 
-If the resolution in the config above doesn't work or look right, use `wlr-randr` to find a better mode supported by your hardware.
+To adjust resolutions for different monitors you can use the `wlr-randr` tool. For example:
+
+2025 MacBook Air:
 
 ```bash
-# Install tool
-yay -S wlr-randr
+wlr-randr --output Virtual-1 --custom-mode 2880x1864 --scale 2
+```
 
-# Identify & Test Modes
-# List available resolutions and test them live to find your preference.
+4k Monitor:
 
-# List all supported modes (Run this inside Hyprland)
-wlr-randr
-
-# TEST: "Safe" Retina (2560x1600)
-# Matches 13" MacBook Air native resolution
-wlr-randr --output Virtual-1 --custom-mode 2560x1600 --scale 2
-
-# TEST: "4K" Crisp (3840x2160)
-# Maximum workspace space (Effective 1080p HiDPI)
+```bash
 wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 2
+```
+
+2560x1440 Monitor:
+
+```bash
+wlr-randr --output Virtual-1 --custom-mode 2560x1440 --scale 2
 ```
 
 ### Fractional Scaling
@@ -204,5 +212,65 @@ You can use fractional scaling (e.g., `1.5`) if you need a balance between crisp
 
 ```bash
 # Test 1.5x Scaling
-wlr-randr --output Virtual-1 --custom-mode 2560x1600 --scale 1.5
+#wlr-randr --output Virtual-1 --custom-mode 2560x1600 --scale 1.5
+wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 1.5
+```
+
+## Troubleshooting resolutions
+
+### Tools
+
+Use either ```hyprctl monitors``` or ```wlr-randr``` to get information about your connected displays.
+
+### Stuck in low resolution?
+
+If you are stuck at 1280x800 resolution then:
+
+1) Make sure that the `Retina Mode` setting is checked in the UTM virtual machine settings.
+2) Verify that the SPICE Agent is running without errors with:
+
+```bash
+systemctl status spice-vdagentd
+```
+
+### Boot Resolution (GRUB)
+
+Another option is to set the UTM window to open at a specific resolution by default by editing the GRUB settings.
+
+I found that 3840x2160 worked well on both my macBook and 4K monitors.  Specifically for my 2025 macBook Air this gives me a crisp 4K display in the UTM window with a scale of 2. It dynamically resized to 3420x2146 and is at least reporting to be refreshing at 75 Hz.
+scale: 2.00
+
+```bash
+sudo nano /etc/default/grub
+# Find: GRUB_CMDLINE_LINUX_DEFAULT="..."
+# Add this to the end (inside the quotes): video=Virtual-1:2560x1600@60
+# Example:
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:2560x1600"
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160"
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160@60"
+
+# Update GRUB config
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+#### Display Configuration (Troubleshooting & Fine-Tuning)
+
+Switch to using dynamic scaling in your Hyprland config (`~/.config/hypr/hyprland.conf`) file
+
+```bash
+# 1. Display: Dynamic Resizing (The UTM Advantage)
+# "preferred" tells Hyprland to use whatever resolution the UTM window is resized to.
+# "auto" positions it automatically.
+# "2" scales it for Retina (HiDPI). Change to "1" if you want massive screen real estate.
+monitor=,preferred,auto,2
+```
+
+#### Optional "Force Enable" Flag (e) Fix
+
+You can force a resolution then add an `e` at the end of the monitor line in your grub config.
+
+*Note* This is also handy when switching between monitors then you need.
+
+```bash
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160@60e"
 ```
