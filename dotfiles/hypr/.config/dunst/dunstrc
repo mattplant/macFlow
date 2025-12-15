@@ -1,0 +1,52 @@
+[global]
+    monitor = 0
+    follow = mouse
+    # Geometry: width x height - padding + margin
+    geometry = "350x5-20+40"
+    indicate_hidden = yes
+    shrink = no
+    transparency = 0
+    notification_height = 0
+    separator_height = 2
+    padding = 10
+    horizontal_padding = 10
+    frame_width = 2
+
+    # Appearance
+    frame_color = "#ffffff"
+    separator_color = frame
+    sort = yes
+    font = JetBrainsMono Nerd Font 10
+    line_height = 0
+    markup = full
+    format = "<b>%s</b>\n%b"
+    alignment = left
+    vertical_alignment = center
+    show_age_threshold = 60
+    word_wrap = yes
+    ellipsize = middle
+    ignore_newline = no
+    stack_duplicates = true
+    hide_duplicate_count = false
+    show_indicators = yes
+
+    # Icons
+    icon_position = left
+    min_icon_size = 0
+    max_icon_size = 48
+
+[urgency_low]
+    background = "#000000"
+    foreground = "#888888"
+    timeout = 10
+
+[urgency_normal]
+    background = "#000000"
+    foreground = "#ffffff"
+    timeout = 10
+
+[urgency_critical]
+    background = "#000000"
+    foreground = "#ff0000"
+    frame_color = "#ff0000"
+    timeout = 0

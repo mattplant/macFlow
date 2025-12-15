@@ -1,0 +1,11 @@
+# Config for wofi
+mode=drun
+show=drun
+prompt=Apps
+width=500
+height=300
+location=center
+no_actions=true
+allow_images=true
+image_size=24
+insensitive=true

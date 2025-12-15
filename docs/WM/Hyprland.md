@@ -68,13 +68,13 @@ Link the configurations from the repo to your system:
 ```bash
 cd ~/macFlow/dotfiles
 
-# 1. Link Window Manager & UI (Hyprland, Waybar, Wofi, Dunst)
+# Link Window Manager & UI (Hyprland, Waybar, Wofi, Dunst)
 stow -t ~ hypr
 
-# 2. Link Shell & Terminal (Foot)
+# Link Shell & Terminal (Foot)
 stow -t ~ shell foot
 
-# 3. Link Integration Scripts (Clipboard & Utils)
+# Link Integration Scripts (Clipboard & Utils)
 stow -t ~ scripts
 ```
 

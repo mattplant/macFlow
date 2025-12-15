@@ -1,6 +1,6 @@
 # macFlow: Development Tools
 
-Development Tools configuration for the macFlow project.
+Development Tools for the macFlow project.
 
 ## VSCode
 

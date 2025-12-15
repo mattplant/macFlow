@@ -1,0 +1,64 @@
+/* -----------------------------------------------------------------------------
+ * Global Settings - BRUTALIST
+ * -------------------------------------------------------------------------- */
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: #000000; 
+    color: #cccccc;
+}
+
+/* -----------------------------------------------------------------------------
+ * Workspaces
+ * -------------------------------------------------------------------------- */
+#workspaces {
+    background: #000000;
+    padding: 0;
+}
+
+#workspaces button {
+    padding: 0 8px; 
+    background: transparent;
+    color: #555555;
+    transition: none; 
+}
+
+#workspaces button.active {
+    background: #00ff99;
+    color: #000000;
+}
+
+#workspaces button:hover {
+    background: #333333;
+    color: #ffffff;
+}
+
+/* -----------------------------------------------------------------------------
+ * Modules
+ * -------------------------------------------------------------------------- */
+
+#cpu, #memory, #clock, #pulseaudio, #network, #tray {
+    padding: 0 10px;
+    margin: 0;
+    background-color: #000000;
+}
+
+#cpu {
+    color: #eeeeee; 
+}
+
+#memory {
+    color: #eeeeee;
+}
+
+#clock {
+    background-color: #111111;
+    color: #00ff99;
+    font-weight: bold;
+}
