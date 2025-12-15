@@ -1,0 +1,47 @@
+/* Brutalist Wofi Theme */
+window {
+    margin: 0px;
+    border: 2px solid #ffffff;
+    background-color: #000000;
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 14px;
+}
+
+#input {
+    margin: 5px;
+    border: none;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+#inner-box {
+    margin: 5px;
+    border: none;
+    background-color: #000000;
+}
+
+#outer-box {
+    margin: 5px;
+    border: none;
+    background-color: #000000;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#text {
+    margin: 5px;
+    border: none;
+    color: #aaaaaa;
+}
+
+#entry:selected {
+    background-color: #00ff99;
+}
+
+#entry:selected #text {
+    color: #000000;
+    font-weight: bold;
+}

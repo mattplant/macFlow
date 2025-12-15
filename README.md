@@ -5,7 +5,7 @@
 
 > Mac Host. Omarchy-like Flow.
 
-`macFlow` is a **Workflow Module**, not a distribution. It brings an Omarchy-like development experience to the Mac without the bloat to fit the constraints of virtualization.
+`macFlow` is a **Workflow Module**, not a distribution. It brings an [Omarchy](https://omarchy.org/)-like development experience to the Mac without the bloat to fit the constraints of virtualization.
 
 ## Design Philosophy
 
@@ -22,7 +22,7 @@ The foundational goal is to maintain the reliability of modern Apple Silicon and
 
 The primary reason for using Linux is to gain the mechanical efficiency of a Tiling Window Manager (TWM) without fighting the macOS WindowServer.
 
-- **Keyboard-Centric Flow:** It offers the muscle memory and tiling windows optimized for development flow.
+- **Keyboard-Centric Flow:** We implement a workflow optimized for muscle memory and dynamic window tiling.
 - **Development Ready:** A focused environment pre-loaded with **Neovim**, **VSCode**, **Git**, and **Zsh**.
 
 ## Architecture: Office vs. Workbench
@@ -36,13 +36,13 @@ We connect the Host and Guest via a network bridge rather than fragile virtualiz
 
 ### The Bridge (Integration)
 
-To ensure a seamless flow, `macFlow` uses standard network protocols to bypass driver limitations on Apple Silicon:
+To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver limitations on Apple Silicon:
 
 - **Files:** macOS `~/macFlow` directory is mounted into the VM via **SSHFS**.
 - **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
 - **Identity:** Git credentials are passed via **SSH Agent Forwarding**.
 
-## Design Philosophy: Desktop Mode
+## Strategy: "Brutalist Hyprland"
 
 For the **Desktop Mode**, we utilize **UTM** to gain access to **Hardware Acceleration** (`virtio-gpu`), but we configure Hyprland for maximum efficiency.
 
@@ -58,8 +58,6 @@ The `macFlow` experience is designed to be distraction-free and keyboard-centric
 - **Cmd + Tab (to macOS):** You return to the **Admin State**. You answer emails, join calls, manage calendar events, and create presentations and other Office tasks.
 - **Persistence:** The VM is persistent. You can disconnect, close the lid, or switch contexts, and the Linux layout remains exactly where you left it.
 
----
-
 ## Choose Your Flow
 
 `macFlow` supports two distinct operating modes.
@@ -70,7 +68,7 @@ The `macFlow` experience is designed to be distraction-free and keyboard-centric
 - **Pros:** Extremely lightweight, max battery efficiency, zero maintenance, native macOS fonts/rendering.
 - **Cons:** No tiling window manager logic; relies on macOS window management.
 
-### Desktop Mode (*The Full Experience*)
+### "Desktop" Mode (*The Full Experience*)
 
 - **What it is:** A full Tiling Window Manager environment inside the VM.
 - **Pros:** The complete "Omarchy" tiling experience (Dwindle layout), distraction-free focus.
@@ -87,29 +85,31 @@ The `macFlow` experience is designed to be distraction-free and keyboard-centric
 Every `macFlow` build requires these core steps:
 
 - **VM Platform:** [UTM Setup](./VM/UTM.md)
-- **Guest OS:** [Arch Linux ARM Installation](./Guest-OS/Arch.md)
-- **Integration:** ["Headless" Bridge Setup](./Integration/Headless.md)
+- **Guest OS:**
+  - [Arch Linux (ARM) Installation](./Docs/Guest-OS/Arch-Install.md)
+  - [Arch Linux (ARM) Configuration](./Docs/Guest-OS/Arch-Configure.md)
+- **Integration:** ["Headless" Bridge Setup](./Docs/Integration/Headless.md)
   - *Includes: SSH Access, File Sharing, and Git Identity.*
 
 ### The Desktop (*Optional*)
 
 Proceed here if you want the graphical Tiling Window Manager flow.
 
-- [**Window Manager:** Hyprland Setup](./WM/Hyprland.md)
+- [**Window Manager:** Hyprland Setup](./Docs/WM/Hyprland.md)
   - *Includes: Host Integration (Clipboard), Keybindings, and Dwindle Layout.*
-- [**Visuals:** Waybar & Styling](./WM/Styling.md)
+- [**Visuals:** Waybar & Styling](./Docs/WM/Styling.md)
 
 ### The Workbench (*Optional*)
 
 Install the tools to enable efficient development work.
 
-- [**Development Tools:** Neovim, VSCode, & Terminals](./Tools/Development.md)
+- [**Development Tools:** Neovim, VSCode, & Terminals](./Docs/Tools/Development.md)
 
 ## Directory Structure
 
 ```text
 macFlow/
-├── Guest-OS/       # Arch Linux ARM installation
+├── Guest-OS/       # Arch Linux ARM installation guides
 ├── Integration/    # SSH, SSHFS, and Bridge configuration
 ├── Tools/          # Neovim, VSCode, and Shell setup
 ├── VM/             # UTM configuration

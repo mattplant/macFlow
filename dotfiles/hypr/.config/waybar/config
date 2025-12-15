@@ -1,0 +1,49 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": ["hyprland/window"],
+    "modules-right": ["cpu", "memory", "disk", "clock", "tray"],
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "format": "{name}"
+    },
+    "hyprland/window": {
+        "format": "[ {} ]",
+        "max-length": 50,
+        "rewrite": {
+            "(.*) - Firefox": "Firefox",
+            "(.*) - Visual Studio Code": "VS Code"
+        }
+    },
+    "clock": {
+        "format": "{:%H:%M  %a %b %d}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt>{calendar}</tt>"
+    },
+    "cpu": {
+        "interval": 10,
+        "format": " {}%",
+        "max-length": 10,
+        "on-click": ""
+    },
+    "disk": {
+        "interval": 30,
+        "format": "/ {percentage_used}%",
+        "path": "/",
+        "tooltip": true,
+        "tooltip-format": "{used} used out of {total} on {path} ({percentage_used}%)"
+    },
+    "memory": {
+        "interval": 30,
+        "format": " {}%",
+        "format-alt": " {used:0.1f}GB",
+        "max-length": 10,
+        "tooltip": true,
+        "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used"
+    },
+    "tray": {
+        "spacing": 10
+    }
+}
