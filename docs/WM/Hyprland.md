@@ -76,7 +76,10 @@ stow -t ~ shell foot
 
 # Link Integration Scripts (Clipboard & Utils)
 stow -t ~ scripts
-```
+
+# Reload the profile to apply the changes
+source ~/.bash_profile
+``````
 
 *Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
 
@@ -114,23 +117,6 @@ Due to race conditions and broken internal X11/Wayland bridging on ARM64, we nee
 - **start-spice:** The master orchestrator. It waits for the XWayland socket to appear before launching the clipboard agent to prevent race conditions.
 - **clipboard-sync:** A watchdog that monitors the X11 clipboard and syncs changes to Wayland (Mac ➔ VM).
 - **clipboard-export:** A helper script bound to Super+Shift+C that pushes Wayland text to the Mac clipboard (VM ➔ Mac).
-
-### Environment Variables
-
-**File:** ~/.bash_profile
-
-Ensure your shell profile loads the VM-specific flags.
-
-```bash
-# Fix invisible mouse cursor
-export WLR_NO_HARDWARE_CURSORS=1
-```
-
-Reload the profile to apply the changes.
-
-```bash
-source ~/.bash_profile
-```
 
 ## Fix: Hyprland Crashes on Startup
 
