@@ -35,9 +35,14 @@ PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 # 3. MACFLOW ALIASES & NAVIGATION
 # ---------------------------------------------------------
 
-# Sh
+# Launch Desktop Mode
+alias desktop='dbus-run-session Hyprland'
+
+# Shortcuts to source profile files
 alias sbp='source ~/.bash_profile' # Source bash_profile
 alias sbrc='source ~/.bashrc' # Source bashrc
+
+# General
 alias a='alias'
 
 # File & Directory Navigation
@@ -66,6 +71,7 @@ alias displayWaybarReload='killall waybar && waybar & disown'
 # Resolution Presets (UTM)
 alias displayResolutionMBA='wlr-randr --output Virtual-1 --custom-mode 2880x1864 --scale 2'
 alias displayResolution4K='wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 2'
+alias displayResolution4Ksmall='wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 1.5'
 alias displayResolution2560x1440='wlr-randr --output Virtual-1 --custom-mode 2560x1440 --scale 2'
 
 # ---------------------------------------------------------
