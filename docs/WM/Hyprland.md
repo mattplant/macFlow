@@ -2,6 +2,8 @@
 
 Build notes for installing and configuring **Hyprland** in the `macFlow` project.
 
+*Note:* For the `macFlow` desktop philosophy see [macFlow Desktop](./Desktop.md).
+
 ## Install Hyprland & Tools
 
 Install the compositor and the necessary ecosystem tools.
@@ -34,7 +36,7 @@ yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
 # - xorg-xwayland: Ensure XWayland is available for legacy X11 apps (like the SPICE agent)
 yay -S xclip clipnotify xorg-xwayland
 
-# Optional: Configuration tools to make Qt apps look like GTK apps
+# (Optional) Configuration tools to make Qt apps look like GTK apps
 yay -S qt5ct qt6ct
 ```
 
@@ -97,7 +99,7 @@ This configuration assumes:
 - **Drivers:** You installed mesa, spice-vdagent, and hyprland.
 - **Philosophy:** "Brutalist" (No blur/shadows/animations) for maximum stability on the VM.
 
-We leverage an "Omarchy"-like config but strip heavy visuals for VM stability.
+We strip heavy visuals for VM stability.
 
 - **Monitor:** Auto-scales to UTM window size
 - **Input:** Natural scrolling, touchpad tap-to-click
@@ -163,6 +165,24 @@ From the TTY (Login screen):
 
 ```bash
 dbus-run-session Hyprland
+```
+
+## Apply GTK Dark Mode
+
+Set GTK apps and dialog boxes to dark mode.
+
+```bash
+# Install nwg-look
+yay -S nwg-look gnome-themes-extra
+
+# Run nwg-look
+nwg-look
+# Set the following per tab:
+# - Widget: Select Adwaita-dark
+# - Color Scheme: Check the box "Prefer Dark Theme"
+# - Icons: Select Adwaita
+# - Cursor: Select Adwaita (fixes the "X" cursor bug)
+# Click "Apply" -> "Close"
 ```
 
 ## Adjust Resolution

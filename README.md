@@ -8,7 +8,7 @@
 ## Prerequisites
 
 - **Hardware:** A modern Apple Silicon Mac running macOS.
-- **Storage:** At least 40GB of free drive space (Less required for Headless-only setups).
+- **Storage:** At least 20GB of free drive space (Less required for Headless-only setups).
 - **Permissions:** Admin access for Network/Sharing settings.
 
 ## Design Philosophy
@@ -53,32 +53,7 @@ We connect the Host and Guest via a network bridge rather than fragile virtualiz
 - **Pros:** The complete tiling experience (Dwindle layout), distraction-free focus.
 - **Cons:** Higher resource usage.
 
-## Desktop
-
-`macFlow` desktop is a **Workflow Module**, not a distribution. It brings a pure, uncompromised Linux development experience to the Mac, optimized for the constraints of virtualization on Apple Silicon.
-
-### Efficiency & Workflow
-
-The primary reason for using Linux is to gain the mechanical efficiency of a Tiling Window Manager (TWM) without fighting the macOS WindowServer.
-
-- **Keyboard-Centric Flow:** We implement a workflow optimized for muscle memory and dynamic window tiling.
-- **Development Ready:** A focused environment pre-loaded with **VSCode**, **Git**, etc.
-
-### Strategy: "Brutalist Hyprland"
-
-For the **Desktop Mode**, we utilize **UTM** to gain access to **Hardware Acceleration** (`virtio-gpu`), but we configure Hyprland for maximum efficiency.
-
-- **The Engine:** We use Hyprland for its **Dynamic Tiling Engine (Dwindle Layout)**, offering superior automatic layout logic compared to manual tilers.
-- **The Mechanics:** We keep the "Muscle Memory" (Keybindings, Wofi, Waybar) of a modern Linux desktop.
-- **The Trade-off:** We disable **Blur, Drop Shadows, and Animations** to ensure the VM feels responsive and snappy, prioritizing function over form.
-
-### The "Flow" Experience
-
-The `macFlow` experience is designed to be keyboard-centric and distraction-free:
-
-- **Cmd + Tab (to UTM):** You enter the **Flow State**. Distractions are tiled away. You are in a pure Linux environment controlled entirely by the keyboard.
-- **Cmd + Tab (to macOS):** You return to the **Admin State**. You answer emails, join calls, manage calendar events, and perform other Office tasks.
-- **Persistence:** The VM is persistent. You can disconnect, close the lid, or switch contexts, and the Linux layout remains exactly where you left it.
+*Note:* For the desktop philosophy see [macFlow Desktop](./docs/WM/Desktop.md).
 
 ## Build Steps
 
@@ -89,14 +64,10 @@ Every `macFlow` build requires these core steps:
   - [Arch Linux Installation](./docs/Guest-OS/Arch-Install.md)
   - [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md)
 - **Integration:** ["Headless" Bridge Setup](./docs/Integration/Headless.md)
-  - *Includes: SSH Access, File Sharing, and Git Identity.*
 
 ### The Desktop (*Optional*)
 
-Proceed here if you want the graphical Tiling Window Manager flow.
-
-- [**Window Manager:** Hyprland Setup](./docs/WM/Hyprland.md)
-  - *Includes: Host Integration (Clipboard), Keybindings, and Dwindle Layout.*
+- [Tiling Window Manager](./docs/WM/Hyprland.md)
 
 ### The Workbench (*Optional*)
 

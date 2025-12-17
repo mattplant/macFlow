@@ -93,6 +93,23 @@ cat ~/.ssh/id_ed25519.pub
 
 4) Click `New SSH key` and paste it.
 
+## System Information
+
+We use **Fastfetch** as a modern, high-performance replacement for the deprecated `neofetch`. It provides a quick summary of the system hardware and software stack.
+
+```bash
+# Install Fastfetch
+yay -S fastfetch
+```
+
+## Terminal File Manager
+
+Install Yazi and optional dependencies for previews/archives
+
+```bash
+yay -S yazi ffmpegthumbnailer unarchiver jq poppler fd ripgrep fzf zoxide imagemagick
+```
+
 ## Web Browser
 
 ### Firefox (Recommended)
