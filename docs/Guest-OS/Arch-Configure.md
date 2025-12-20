@@ -2,19 +2,10 @@
 
 Build notes and troubleshooting documentation for configuring **Arch Linux ARM (ALARM)** for use with [UTM](../VM/UTM.md) on macOS.
 
-## Boot VM
+## Boot Arch Linux
 
 - **Start the VM** in UTM.
-- **Open Serial Console:** Use the text-based window (not the black graphical one).
 - **Boot:** Select `Arch Linux` from the GRUB menu.
-
-### Font Rendering Fix (Temporary)
-
-If the text looks garbled due to encoding mismatches, you can login "Blindly" and reset the terminal.
-
-- Type `macflow` and press **Enter**.
-- Type your password and press **Enter**.
-- Type `reset` and press **Enter**.
 
 ## Basic System Configuration
 
@@ -29,7 +20,7 @@ You cannot run admin commands yet. Switch to root to fix permissions.
 su -
 
 # Install Sudo and Editor
-pacman -S sudo nano
+pacman -S sudo
 
 # Configure Permissions
 EDITOR=nano visudo
@@ -43,21 +34,24 @@ usermod -aG wheel macflow
 exit
 ```
 
-### Configure Console Font
+## Clone macFlow
 
-Install a HiDPI-friendly font so the text is readable on the Retina display.
+Ensure you have cloned the repo into your home directory:
 
 ```bash
-# Install Terminus Font
-sudo pacman -S terminus-font
-
-# Configure System
-sudo nano /etc/vconsole.conf
-# Action: Set content to: FONT=ter-132n
-
-# Apply immediately
-sudo systemctl restart systemd-vconsole-setup
+cd ~
+git clone https://github.com/mattplant/macFlow.git
 ```
+
+## Configure Arch Linux
+
+Run the macFlow Arch configuration script to automate the setup of drivers, packages, and services.
+
+```bash
+~/macFlow/scripts/configArch.sh
+```
+
+## Explanation of Key Steps
 
 ### Package Management (yay)
 
@@ -88,7 +82,6 @@ We must compile `yay` manually once to bootstrap it.
 
 ```bash
 # Clone and Build
-cd ~
 git clone https://aur.archlinux.org/yay.git
 cd yay
 makepkg -si
@@ -106,10 +99,8 @@ Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration
 
 ```bash
 # - mesa: 3D acceleration (virtio-gpu)
-# - spice-vdagent: Clipboard and auto-resolution resizing
-# - qemu-guest-agent: Host-Guest communication
 # - linux-headers: Kernel headers for module compilation
-yay -S mesa spice-vdagent qemu-guest-agent linux-headers
+yay -S mesa linux-headers
 ```
 
 ### Configure Kernel (mkinitcpio)
@@ -126,33 +117,6 @@ sudo nano /etc/mkinitcpio.conf
 sudo mkinitcpio -P
 ```
 
-### Configure Bootloader (GRUB)
-
-We must stop GRUB from sending video to the Serial Port (ttyAMA0) and redirect it to the Screen (tty1).
-
-Edit the GRUB config:
-
-```bash
-sudo nano /etc/default/grub
-```
-
-- Fix Kernel Output:
-  - Find `GRUB_CMDLINE_LINUX_DEFAULT=...`
-  - Coment it out: `#GRUB_CMDLINE_LINUX_DEFAULT=...`
-  - Add: `GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1"`
-- Fix GRUB Output:
-  - Find `GRUB_TERMINAL_OUTPUT=...`
-  - Coment it out: `#GRUB_TERMINAL_OUTPUT=...`
-  - Add: `GRUB_TERMINAL_OUTPUT=console`
-- *Why:* Keeps the bootloader in text mode to avoid "EFI UGA" errors.
-- Save and Exit
-
-Update Bootloader:
-
-```bash
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
-
 ### Enable Services
 
 Ensure background agents start on boot.
@@ -160,19 +124,32 @@ Ensure background agents start on boot.
 ```bash
 # Enable QEMU Guest Agent for Host-Guest communication
 sudo systemctl start qemu-guest-agent
-
-# Enable Spice Agent for Clipboard Sync and Auto-Resize
-sudo systemctl start spice-vdagentd
 ```
 
-## The Hardware Switch (Enable 3D Accelerated Graphics)
+## Install and Enable SSH
 
-Now that the software is ready, we switch the virtual hardware to 3D mode.
+Install OpenSSH
 
-- Poweroff the VM: `sudo poweroff`
-- Open UTM Settings for the VM
-  - Serial: Right-click the `Serial` device in the sidebar and click `Remove`
-    - *Why:* This forces the VM to use the main window for output and removes the confusing second window.
-- Start the VM
+```bash
+yay -S openssh
+```
 
-*Note:* You should now see the boot text appear on the Main Window (graphical), not just the Serial console.
+Prevent the root user from logging in remotely
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Enable SSH service now and on boot
+
+```bash
+sudo systemctl enable --now sshd
+```
+
+## Install GNU Stow
+
+Install `stow` to manage dotfiles and configurations.
+
+```bash
+sudo pacman -S stow
+```

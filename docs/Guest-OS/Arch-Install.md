@@ -5,7 +5,6 @@ Build notes for installing **Arch Linux ARM (ALARM)** using [UTM](../VM/UTM.md) 
 ## Initial Boot
 
 - **Start the VM** (Play button).
-- **Use Serial Console:** Two windows will appear. The Main Window (Graphics) will likely be black or say "Display Inactive." **Use the second window (Terminal/Serial)** to perform the installation.
 
 ## Core Installation (Archboot)
 
@@ -80,8 +79,7 @@ From the **Launcher** menu, select **`Configure System`**
 - From the **Setup Menu**, select **`Exit` > `Poweroff System`
   - *Why?* This provides a clean stop, allowing you to eject the ISO from VMware settings so your first boot actually goes to your new Arch Linux hard drive.`
 - Prevent the VM from booting back into the Archboot ISO:
-  - On the `macFlow` VM in UTM, expand out the `CD/DVD` section and click `Clear`
-  - Click `Save` to save the changes.
+  - On the `macFlow` VM in UTM, clear the image from the `CD/DVD`
 
 ## Continue to Arch Linux Configuration
 
