@@ -6,6 +6,16 @@ Build notes for installing and configuring **Hyprland** in the `macFlow` project
 
 ## Install Hyprland & Tools
 
+Run the macFlow Arch configuration script to automate the setup of drivers, packages, and services.
+
+```bash
+~/macFlow/scripts/installHyprland.sh
+```
+
+## Explanation of Key Steps
+
+### Install Packages
+
 Install the compositor and the necessary ecosystem tools.
 
 ```bash
@@ -40,32 +50,9 @@ yay -S xclip clipnotify xorg-xwayland
 yay -S qt5ct qt6ct
 ```
 
-## Disable Default Autostart
-
-Prevent the system from launching the unconfigured agent.
-
-```bash
-mkdir -p ~/.config/autostart
-cp /etc/xdg/autostart/spice-vdagent.desktop ~/.config/autostart/
-echo "Hidden=true" >> ~/.config/autostart/spice-vdagent.desktop
-```
-
-## Deploy Configurations (Dotfiles)
+### Deploy Configurations (Dotfiles)
 
 Instead of creating configuration files manually, we deploy the pre-configured "Brutalist" setup directly from the macFlow repository using **GNU Stow**.
-
-### Prerequisites
-
-Ensure you have cloned the repo into your home directory:
-
-```bash
-cd ~
-git clone https://github.com/mattplant/macFlow.git
-```
-
-### Apply Configurations
-
-Link the configurations from the repo to your system:
 
 ```bash
 cd ~/macFlow/dotfiles
@@ -81,13 +68,9 @@ stow -t ~ scripts
 
 # Reload the profile to apply the changes
 source ~/.bash_profile
-``````
+```
 
 *Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
-
-## Configuration Breakdown
-
-The following sections explain the configuration you just deployed. You do not need to create these files manually.
 
 ### The "Brutalist" Hyprland Config
 

@@ -29,15 +29,15 @@ Open UTM and click `Create a New Virtual Machine`.
   - Select `Virtualize` (*Uses Apple `Virtualization.framework` for near-native speed*)
   - Select `Linux`
 - **Hardware**
-  - **Memory:** `8192 MB` (*8 GB*)
-  - **CPU Cores:** `4`
+  - **Memory:** `4096 MB` (*4 GB*)
+  - **CPU Cores:** `2`
   - *Note:* You can adjust this later based on performance needs.
 - **Linux**
   - **Uncheck** "Use Apple Virtualization"
     - *Why:* This forces QEMU backend, which has better Linux driver support.
   - Click `Browse` and select your `archboot-*.iso`.
 - **Storage**
-  - Size: `40 GB`
+  - Size: `32 GB`
 - **Shared Directory**
   - Leave empty
     - *Note:* We use SSHFS for robust file sharing.
@@ -63,14 +63,6 @@ In the Settings window that appears, apply these specific changes to support Hyp
 - **Network:**
   - **Network Mode:** `Bridged (Advanced)`
   - *Why:* Gives the VM a distinct IP address on the LAN, allowing for seamless SSH connections and reliable file mounting.
-
-## Serial (Crucial for Installation)
-
-Since the `virtio-gpu-pci` card does not display boot text until the kernel loads, we need a **Serial Console** to interact with the installer.
-
-- **New Device:** Click New... (bottom of sidebar) > Serial
-- **Mode:** Select Built-in Terminal
-- *Note:* You will use this text window to run the `archboot` installer. You can remove this device after the OS is installed.
 
 ## Continue to Arch Linux Base Installation
 
