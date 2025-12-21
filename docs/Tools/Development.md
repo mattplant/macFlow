@@ -72,13 +72,6 @@ git config --global core.editor "code --wait"
 git config --global init.defaultBranch main
 ```
 
-### Generate your SSH key
-
-```bash
-# Generate Key (if you haven't already)
-ssh-keygen -t ed25519 -C "macflow"
-```
-
 ### Copy Public Key to GitHub
 
 1) View Key

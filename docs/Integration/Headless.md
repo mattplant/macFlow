@@ -8,49 +8,6 @@ Build notes for a realiable and secure "Headless" connection between the macOS a
 
 We can use SSH to reliably share the clipboard between the Host (macOS) and Guest (Linux VM) while in "Headless" mode (no GUI).
 
-### Enable `hostname` resolution on Linux VM
-
-Configure Linux VM so the system can resolve itself via mDNS.
-
-```bash
-# Configure Hostname (if not done already)
-sudo hostnamectl set-hostname macflow
-# Update the hosts file so the system can resolve itself
-sudo nano /etc/hosts
-# Add this entry to bottom of the file (if not already present):
-127.0.0.1        macflow.localdomain macflow
-```
-
-Install and enable the SSH daemon and Avahi (Bonjour).
-
-```bash
-# Install packages
-# - openssh: SSH server/client
-# - avahi: Bonjour/mDNS service discovery
-# - nss-mdns: Allows resolving .local hostnames via mDNS
-sudo pacman -Syu openssh avahi nss-mdns
-
-# Enable the SSH Server
-sudo systemctl enable --now sshd
-
-# Enable Avahi (Bonjour) for .local hostname resolution
-sudo systemctl enable --now avahi-daemon
-
-# Configure Name Resolution: To ensure Arch broadcasts its name correctly
-# Edit the config
-sudo nano /etc/nsswitch.conf
-# Find the line: hosts: ...
-# Ensure "mdns_minimal [NOTFOUND=return]" is present before resolve or dns.
-# This is what it was before I modified it:
-# hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
-# And this is what it should be changed to:
-# hosts: mymachines files myhostname mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] dns
-
-# Verify network connection from macOS to the Linux VM
-# From your macOS Terminal (Terminal.app, Ghostty, or Kitty).
-ping -c 3 macflow.local
-```
-
 ### Setup Passwordless Access (SSH Keys) to the Linux VM
 
 ```bash

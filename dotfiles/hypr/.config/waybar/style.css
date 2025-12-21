@@ -10,7 +10,7 @@
 }
 
 window#waybar {
-    background: #000000; 
+    background: #000000;
     color: #cccccc;
 }
 
@@ -23,10 +23,10 @@ window#waybar {
 }
 
 #workspaces button {
-    padding: 0 8px; 
+    padding: 0 8px;
     background: transparent;
     color: #555555;
-    transition: none; 
+    transition: none;
 }
 
 #workspaces button.active {
@@ -50,7 +50,7 @@ window#waybar {
 }
 
 #cpu {
-    color: #eeeeee; 
+    color: #eeeeee;
 }
 
 #memory {
@@ -58,7 +58,6 @@ window#waybar {
 }
 
 #clock {
-    background-color: #111111;
     color: #00ff99;
     font-weight: bold;
 }

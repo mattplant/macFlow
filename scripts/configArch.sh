@@ -8,13 +8,21 @@ set -e  # Exit on error
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[0;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 log() { echo -e "${BLUE}[macFlow]${NC} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# --- 1. Package Management (Yay) ---
+# --- Pre-flight Check ---
+if [ "$EUID" -eq 0 ]; then
+  error "Please run this script as your normal user, not as root (sudo)."
+  exit 1
+fi
+
+# --- Package Management (Yay) ---
 log "Step 1: Setting up Package Management..."
 
 # Install Prerequisites
@@ -33,16 +41,26 @@ else
     success "Yay is already installed."
 fi
 
-# --- 2. Install Drivers & Services ---
-log "Step 2: Installing Drivers (Mesa, Guest Agent, SSH)..."
+# --- Install Drivers & Services ---
+log "Step 2: Installing Drivers & Services..."
 
 # mesa: 3D Graphics
 # linux-headers: For module compiling
-# qemu-guest-agent: Host communication (re-adding this since we removed it)
-# openssh: For remote access
-yay -S --needed --noconfirm mesa linux-headers qemu-guest-agent openssh
+# qemu-guest-agent: Host communication
+# openssh: Remote access
+# avahi, nss-mdns: Hostname resolution (.local)
+PKGS=(
+    mesa
+    linux-headers
+    qemu-guest-agent
+    openssh
+    avahi
+    nss-mdns
+)
 
-# --- 3. Configure Kernel (mkinitcpio) ---
+yay -S --needed --noconfirm "${PKGS[@]}"
+
+# --- Configure Kernel (mkinitcpio) ---
 log "Step 3: Configuring Kernel Modules (VirtIO GPU)..."
 
 CONFIG_FILE="/etc/mkinitcpio.conf"
@@ -55,7 +73,6 @@ else
     log "Injecting virtio drivers into mkinitcpio.conf..."
     # Backup original file
     sudo cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
-
     # Use sed to insert modules inside the MODULES=() parentheses
     # This finds 'MODULES=(...)' and appends our modules inside the closing ')'
     sudo sed -i "s/MODULES=(\(.*\))/MODULES=(\1 $MODULES)/" "$CONFIG_FILE"
@@ -66,8 +83,36 @@ else
     success "Kernel configured."
 fi
 
-# --- 4. Enable Services ---
-log "Step 4: Enabling Services..."
+# --- Configure Hostname Resolution (.local) ---
+log "Step 4: Configuring Avahi (mDNS)..."
+
+# Enable Avahi Daemon
+sudo systemctl enable --now avahi-daemon
+
+# Edit nsswitch.conf to allow .local resolution
+# We need 'mdns_minimal [NOTFOUND=return]' to appear before 'resolve' or 'dns'
+NSS_FILE="/etc/nsswitch.conf"
+
+if grep -q "mdns_minimal" "$NSS_FILE"; then
+    success "nsswitch.conf already configured for mDNS."
+else
+    log "Patching /etc/nsswitch.conf..."
+    # Backup original file
+    sudo cp "$NSS_FILE" "${NSS_FILE}.bak"
+
+    # This sed command looks for the "hosts:" line and replaces the text "resolve"
+    # with "mdns_minimal [NOTFOUND=return] resolve" effectively inserting it before.
+    # If "resolve" isn't there (older setups), it tries to insert before "dns".
+    if grep -q "resolve" "$NSS_FILE"; then
+         sudo sed -i 's/resolve/mdns_minimal [NOTFOUND=return] resolve/' "$NSS_FILE"
+    else
+         sudo sed -i 's/dns/mdns_minimal [NOTFOUND=return] dns/' "$NSS_FILE"
+    fi
+    success "Hostname resolution configured."
+fi
+
+# --- Enable Services ---
+log "Step 5: Enabling Services..."
 
 # QEMU Guest Agent
 sudo systemctl start qemu-guest-agent
@@ -75,11 +120,30 @@ sudo systemctl start qemu-guest-agent
 # Enable SSH
 sudo systemctl enable --now sshd
 
-# --- 5. Install GNU Stows ---
-log "Step 5: Installing GNU Stow"
+# --- Generate User SSH Key ---
+log "Step 6: Generating User SSH Key..."
+
+KEY_FILE="$HOME/.ssh/id_ed25519"
+
+if [ -f "$KEY_FILE" ]; then
+    success "SSH Key already exists. Skipping generation."
+else
+    # -N "" creates it with NO passphrase (fully automated).
+    # Remove -N "" if you want to be prompted for a password.
+    ssh-keygen -t ed25519 -C "$USER" -f "$KEY_FILE" -N ""
+    success "SSH Key generated."
+fi
+
+# --- Install GNU Stows ---
+log "Step 7: Installing GNU Stow"
 
 yay -S --needed --noconfirm stow
 
 # --- Done ---
 echo ""
 success "macFlow Arch config complete!"
+echo "------------------------------------------------"
+echo "Next Steps:"
+echo "1. Reboot your VM."
+echo "2. You should now be able to SSH via: ssh $USER@$(uname -n).local"
+echo "------------------------------------------------"
