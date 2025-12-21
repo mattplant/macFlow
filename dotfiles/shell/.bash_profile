@@ -6,5 +6,8 @@
 # Welcome Message
 echo " "
 echo "Welcome to macFlow."
+echo " "
 echo "Type 'desktop' to launch the macFlow Desktop."
+echo " - Input capture toggle is CTRL + OPTION"
+echo " - Cheatsheet key is CMD + /"
 echo " "
