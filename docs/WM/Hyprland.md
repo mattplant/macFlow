@@ -2,7 +2,7 @@
 
 Build notes for installing and configuring **Hyprland** in the `macFlow` project.
 
-*Note:* For the `macFlow` desktop philosophy see [macFlow Desktop](./Desktop.md).
+*Note:* For the `macFlow` desktop philosophy see [macFlow Desktop](../Desktop.md).
 
 ## Install Hyprland & Tools
 

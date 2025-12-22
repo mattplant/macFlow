@@ -1,12 +1,24 @@
 # macFlow: "Headless" Integration with Linux VM
 
-Build notes for a realiable and secure "Headless" connection between the macOS and the Linux VM.
+When in "Headless" mode (no GUI), we need to establish reliable integration points between the Host (macOS) and Guest (Linux VM).
+
+- **Files:** Files are shared via **SSHFS**.
+- **Clipboard:** Copy/Paste is handled via **SSH**
+- **Identity:** Git credentials are passed via **SSH Agent Forwarding**
+
+## The File Bridge (SSHFS)
+
+We use **SSHFS** (SSH Filesystem) to reliably share files between the Host (macOS) and Guest (Linux VM).
+
+For details, see [macFlow: File Integration](./Integration/Files.md).
 
 ## Clipboard Sync Over SSH
 
-*Let's get clipboard sharing working between macOS and the Linux VM now for easier completion of the macFlow setup.*
-
 We can use SSH to reliably share the clipboard between the Host (macOS) and Guest (Linux VM) while in "Headless" mode (no GUI).
+
+## The Identity Bridge (SSH Agent Forwarding)
+
+We want to be able to use git inside the Linux VM, but have it use the SSH keys stored in your macOS Keychain for authentication.
 
 ### Setup Passwordless Access (SSH Keys) to the Linux VM
 
@@ -32,15 +44,6 @@ ssh macflow@macflow.local
 # - Copy some text from elsewhere on macOS and paste it (Cmd+V) in the Terminal
 # - Copy some text in the Terminal and paste it (Cmd+V) into a different app in your macOS
 ```
-
-## The Identity Bridge (SSH Agent Forwarding)
-
-We want to be able to use git inside the Linux VM, but have it use the SSH keys stored in your macOS Keychain for authentication.
-
-### Prerequisites
-
-- have your SSH key added to github/gitlab
-- already set up passwordless SSH access from macOS to the Linux VM
 
 ### Configure the Host (macOS)
 

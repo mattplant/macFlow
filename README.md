@@ -5,45 +5,22 @@
 
 > Mac Host. Linux Development Flow.
 
-## Prerequisites
+## Design
 
-- **Hardware:** A modern Apple Silicon Mac running macOS.
-- **Storage:** At least 20GB of free drive space (Less required for Headless-only setups).
-- **Permissions:** Admin access for Network/Sharing settings.
-
-## Design Philosophy
-
-The core objective is to decouple the *Development Workflow* from the *Operating System*. We treat the machine as two distinct entities working in tandem.
-
-### Stability & Host Integrity
-
-The foundational goal is to maintain the reliability of modern Apple Silicon and the macOS ecosystem for everyday use, while leveraging a Linux VM for development tasks.
+The core objective is to decouple the *Development Workflow* from the host *Operating System*. We treat the machine as two distinct entities working in tandem.
 
 - **Host Integrity:** We keep macOS as the stable host for **critical functions** (Hardware drivers, Battery life, Wi-Fi stability) and high-performance native apps (Zoom, Teams, Office).
 - **VM Performance:** We ensure the Linux environment remains lightweight and disposable.
 
-### The Bridge (Integration)
-
-To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver limitations on Apple Silicon:
-
-- **Files:** macOS `~/macFlow` directory is mounted into the VM via **SSHFS**.
-- **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
-- **Identity:** Git credentials are passed via **SSH Agent Forwarding**.
-
-We connect the Host and Guest via a network bridge rather than fragile virtualization drivers.
-
-| Domain | Role | Responsibility |
-| :--- | :--- | :--- |
-| **Host** (macOS) | **The Office** | **"Admin."**<br>• Communication (Outlook, Slack)<br>• Hardware Abstraction (Wi-Fi, Power)<br>• Security (FileVault, Firewall) |
-| **Guest** (Arch) | **The Workbench** | **"The Flow."**<br>• **TWM:** Hyprland (VirtIO-GPU)<br>• **Code:** VSCode / Neovim<br>• **Terminal:** Foot / Zsh / Starship |
+For more details, see [macFlow Reference Context](./docs/Reference.md).
 
 ## Choose Your Flow
 
 `macFlow` supports two distinct operating modes.
 
-### "Headless" Mode (*The Core*)
+### "Headless" Mode
 
-- **What it is:** No Linux GUI. You use macOS native terminals (Ghostty/Kitty) and VSCode Remote to interact with the Linux engine.
+- **What it is:** No Linux GUI. You use macOS native terminals and VSCode Remote to interact with the Linux engine.
 - **Pros:** Extremely lightweight, max battery efficiency, zero maintenance, native macOS fonts/rendering.
 - **Cons:** No tiling window manager logic; relies on macOS window management.
 
@@ -53,40 +30,44 @@ We connect the Host and Guest via a network bridge rather than fragile virtualiz
 - **Pros:** The complete tiling experience (Dwindle layout), distraction-free focus.
 - **Cons:** Higher resource usage.
 
-*Note:* For the desktop philosophy see [macFlow Desktop](./docs/WM/Desktop.md).
+> *Tip:* You can start with ["Headless"](./docs/Headless.md) for lightweight tasks, and switch to ["Desktop"](./docs/Desktop.md) mode later if needed.
 
-## Build Steps
+## Quick Start Guide
 
-Every `macFlow` build requires these core steps:
+### Prerequisites
 
-- **VM Platform:** [UTM Setup](./docs/VM/UTM.md)
-- **Guest OS:**
-  - [Arch Linux Installation](./docs/Guest-OS/Arch-Install.md)
-  - [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md)
-- **Integration:** ["Headless" Bridge Setup](./docs/Integration/Headless.md)
+- **Hardware:** A modern Apple Silicon Mac running macOS.
+- **Storage:** At least 20GB of free drive space (Less required for Headless-only setups).
+- **Permissions:** Admin access for Network/Sharing settings.
+- **Software:** [UTM](https://mac.getutm.app/).
+- **ISO:** [Arch Linux Archboot AArch64 ISO](https://release.archboot.com/aarch64/latest/iso/)
 
-### The Desktop (*Optional*)
+### Base Installation
 
-- [Tiling Window Manager](./docs/WM/Hyprland.md)
+- **Create VM:** Open UTM and create a new **Virtualize** machine for Linux
+  - *See [UTM Setup](./docs/VM/UTM.md) for recommended settings*
+- **Install Arch:** Boot the ISO and run the installer
+  - *See [Arch Linux Install](./docs/Guest-OS/Arch-Install.md) for detailed steps*
+- **Configure Arch:**
+  - *See [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md) for detailed steps*
 
-### The Workbench (*Optional*)
+### (Optional) "Headless" Installation
 
-Install the tools to enable efficient development work.
+For lightweight development without a GUI, see [macFlow Headless](./docs/Headless.md).
 
-- [**Development Tools:** VSCode, git config, etc.](./docs/Tools/Development.md)
+### (Optional) "Desktop" Installation
 
-## Directory Structure
+For the full tiling window manager experience, see:
 
-```text
-macFlow/
-├── docs/               # Documentation
-│   ├── Guest-OS/       # Arch Linux installation and configuration
-│   ├── Integration/    # SSH, SSHFS, and Bridge configuration
-│   ├── Tools/          # VSCode, git config, etc.
-│   ├── VM/             # UTM configuration
-│   └── WM/             # Hyprland and Waybar configuration
-├── dotfiles/           # Source configuration files (Stow targets)
-├── LICENSE             # Source Code License (MIT)
-├── LICENSE-DOCS.md     # Documentation License (CC BY 4.0)
-└── README.md           # You are here
-```
+- **Install Tiling WM:** Follow the steps in [Tiling Window Manager](./docs/WM/Hyprland.md) to set up **Hyprland** and related tools.
+- **Set up Desktop Environment:** Follow the steps in [macFlow Desktop](./docs/Desktop.md) to finalize the desktop setup.
+
+#### (Optional) Additional Configuration
+
+- **Configure Development Tools:** Set up VSCode, git, and other tools by following [Development Tools](./docs/Tools/Development.md).
+
+### Troubleshooting
+
+- **Tips & Tricks:** See [macFlow Tips & Tricks](docs/Tips.md).
+- TODO: **Display Issues?** Check [Resolution & Scaling](docs/Monitors.md).
+- **Philosophy & Context:** See [macFlow Reference Context](docs/Reference.md).
