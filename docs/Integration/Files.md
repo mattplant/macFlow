@@ -1,4 +1,4 @@
-# macFlow: File Integration with MacOS
+# macFlow: File Integration
 
 Build notes for connectiong sharing the macOS files with the Linux VM
 

@@ -25,11 +25,11 @@ Build notes for installing **Arch Linux ARM (ALARM)** using [UTM](../VM/UTM.md) 
 
 - From the **Launcher** menu, select **`Launch Archboot Setup`**
   - Select **`Prepare Storage Device`** > **`Quick Setup`**
-    - For the size of the disk, enter `40G` *(40 GB)*
+    - For the size of the disk, enter `32G` *(32 GB)*
       - *Note:* UTM uses a VirtIO disk that appears as `/dev/vda`
     - **Device Name Scheme:** `FSUUID` *(Industry standard for persistent block device naming)*
     - **EFI System Partition (ESP):** `/boot (single boot)`
-      - **EFI Size:** `1024` *(1 GB)*
+      - **EFI Size:** `512` *(512 MB)*
       - **Swap:** `0` *(We do not use swap)*
       - **File System:** Select `Btrfs` (Confirm with `Yes`)
       - **Root Size:** `0` *(Uses remaining space)* (Confirm with `Yes`)
