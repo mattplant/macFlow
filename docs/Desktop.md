@@ -38,11 +38,9 @@ We use **SSHFS** (SSH Filesystem) to reliably share files between the Host (macO
 
 For details, see [macFlow: File Integration](./Integration/Files.md).
 
-### Capture Input
+### The "Safety Defusal" (Critical)
 
 By default, macOS intercepts many critical shortcuts (like `Cmd+Q` to quit) before they ever reach your Linux VM. This guide details how to "defuse" these shortcuts so they pass through to Hyprland safely.
-
-#### The "Safety Defusal" (Critical)
 
 **The Risk:** If your mouse is not fully captured by the VM, pressing **`Cmd + Q`** will instantly kill the UTM application and your running Linux session. This results in an improper shutdown, which may cause data loss or corrupt your Linux environment.
 

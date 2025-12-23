@@ -60,29 +60,6 @@ PKGS=(
 
 yay -S --needed --noconfirm "${PKGS[@]}"
 
-# --- Configure Kernel (mkinitcpio) ---
-log "Step 3: Configuring Kernel Modules (VirtIO GPU)..."
-
-CONFIG_FILE="/etc/mkinitcpio.conf"
-MODULES="virtio virtio_pci virtio_blk virtio_net virtio_gpu"
-
-# Check if modules are already present to avoid duplication
-if grep -q "virtio_gpu" "$CONFIG_FILE"; then
-    success "Kernel modules already configured."
-else
-    log "Injecting virtio drivers into mkinitcpio.conf..."
-    # Backup original file
-    sudo cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
-    # Use sed to insert modules inside the MODULES=() parentheses
-    # This finds 'MODULES=(...)' and appends our modules inside the closing ')'
-    sudo sed -i "s/MODULES=(\(.*\))/MODULES=(\1 $MODULES)/" "$CONFIG_FILE"
-
-    # Regenerate initramfs
-    log "Regenerating kernel images (this may take a moment)..."
-    sudo mkinitcpio -P
-    success "Kernel configured."
-fi
-
 # --- Configure Hostname Resolution (.local) ---
 log "Step 4: Configuring Avahi (mDNS)..."
 
@@ -141,7 +118,7 @@ yay -S --needed --noconfirm stow
 
 # --- Done ---
 echo ""
-success "macFlow Arch config complete!"
+success "macFlow Arch Linux configuration complete!"
 echo "------------------------------------------------"
 echo "Next Steps:"
 echo "1. Reboot your VM."

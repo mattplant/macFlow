@@ -30,9 +30,23 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 
 *Tip:* You can start with "Headless" for lightweight tasks, and switch to "Desktop" mode later if needed.
 
-## Arch Linux Configuration Build notes
+## Linux Installation Notes
 
-Build notes for configuring various components of `macFlow` for use with [UTM](./VM/UTM.md) on macOS.
+Key components with context of the `macFlow` Arch Linux installation.
+
+- Required packages for for minimum system:
+  - `base` - core OS
+  - `iptables-nft` - firewall utilities
+  - `linux` - Linux kernel
+  - `polkit` - privilege management
+  - `btrfs-progs` - BTRFS filesystem tools
+  - `dosfstools` - DOS filesystem utilities
+  - `terminal-fonts` - console fonts
+- We also installed these modules: `virtio virtio_pci virtio_blk virtio_net virtio_gpu`
+
+## Linux Configuration Notes
+
+Key components with context of the `macFlow` Arch Linux configuration.
 
 ### Package Management (yay)
 
