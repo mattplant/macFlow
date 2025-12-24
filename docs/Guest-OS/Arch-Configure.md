@@ -43,7 +43,7 @@ cd ~
 git clone https://github.com/mattplant/macFlow.git
 ```
 
-## Configure Arch Linux
+## Execute Script to Configure Arch Linux
 
 Run the `macFlow` Arch Linux configuration script to automate the setup of drivers, packages, and services.
 

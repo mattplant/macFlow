@@ -70,10 +70,6 @@ From the **Setup Menu**, select **`Configure System`**
       - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
       - Return to `Main Menu`
 
-
-<!-- Add packages: `base-devel git mesa linux-headers qemu-guest-agent openssh avahi nss-mdns`
-      - *Why?* These packages are required for building AUR packages, 3D acceleration, and host-guest communication. -->
-
 ### Install Bootloader
 
 - Select `Install Bootloader` from the Archboot **Setup Menu**

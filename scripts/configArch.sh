@@ -44,7 +44,7 @@ fi
 # --- Install Drivers & Services ---
 log "Step 2: Installing Drivers & Services..."
 
-# mesa: 3D Graphics
+# mesa: 3D Graphics Acceleration (virtio-gpu)
 # linux-headers: For module compiling
 # qemu-guest-agent: Host communication
 # openssh: Remote access
@@ -63,7 +63,7 @@ yay -S --needed --noconfirm "${PKGS[@]}"
 # --- Configure Hostname Resolution (.local) ---
 log "Step 4: Configuring Avahi (mDNS)..."
 
-# Enable Avahi Daemon
+# Enable Avahi Daemon (Bonjour) for .local hostname resolution
 sudo systemctl enable --now avahi-daemon
 
 # Edit nsswitch.conf to allow .local resolution

@@ -48,6 +48,8 @@ Key components with context of the `macFlow` Arch Linux installation.
 
 Key components with context of the `macFlow` Arch Linux configuration.
 
+*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
+
 ### Package Management (yay)
 
 Install `yay` to simplify and expand package management.
@@ -63,7 +65,6 @@ Install `yay` to simplify and expand package management.
 Ensure the core build tools are installed.
 
 ```bash
-# Install prereqs
 # - base-devel: Required for building AUR packages
 # - git: Required for cloning the yay repository
 sudo pacman -S --needed base-devel git
@@ -72,8 +73,6 @@ sudo pacman -S --needed base-devel git
 #### Installation
 
 We must compile `yay` manually once to bootstrap it.
-
-*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
 
 ```bash
 # Clone and Build
@@ -95,23 +94,10 @@ Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration
 ```bash
 # - mesa: 3D acceleration (virtio-gpu)
 # - linux-headers: Kernel headers for module compilation
-yay -S mesa linux-headers
-```
-
-#### Configure Kernel (mkinitcpio)
-
-**Critical Step:** **We must force the kernel to load the `virtio-gpu` module early in the boot process or the screen will remain black.
-
-TODO: Add modules and packages (on this page) to base Arch install if possible.
-
-```bash
-sudo nano /etc/mkinitcpio.conf
-# Action: Find the MODULES=() line and add the following: virtio virtio_pci virtio_blk virtio_net virtio_gpu
-# e.g. MODULES=(btrfs vfat crc32c virtio virtio_pci virtio_blk virtio_net virtio_gpu)
-# Save and Exit
-
-# Regenerate images:
-sudo mkinitcpio -P
+# qemu-guest-agent: Host communication
+# openssh: Remote access
+# avahi, nss-mdns: Hostname resolution (.local)
+yay -S mesa linux-headers qemu-guest-agent openssh avahi nss-mdns
 ```
 
 #### Enable Services
@@ -128,19 +114,7 @@ sudo systemctl start qemu-guest-agent
 Install and enable the SSH daemon and Avahi (Bonjour) for simple hostname resolution.
 
 ```bash
-sudo systemctl enable --now sshd
-
-```bash
-# Install packages
-# - openssh: SSH server/client
-# - avahi: Bonjour/mDNS service discovery
-# - nss-mdns: Allows resolving .local hostnames via mDNS
-yay -S openssh avahi nss-mdns
-
-# Enable the SSH Server
-sudo systemctl enable --now sshd
-
-# Enable Avahi (Bonjour) for .local hostname resolution
+# Enable Avahi Daemon (Bonjour) for .local hostname resolution
 sudo systemctl enable --now avahi-daemon
 
 # Configure Name Resolution: To ensure Arch broadcasts its name correctly
@@ -154,11 +128,24 @@ sudo nano /etc/nsswitch.conf
 # hosts: mymachines files myhostname mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] dns
 ```
 
-#### Generate your SSH key
+Enable QEMU Guest Agent and SSH Services.
 
 ```bash
-# Generate Key (if you haven't already)
-ssh-keygen -t ed25519 -C "macflow"
+sudo systemctl start qemu-guest-agent
+sudo systemctl enable --now sshd
+```
+
+#### Generate your SSH key
+
+Generate a SSH keypair on your the Linux VM using the modern, fast Edwards-curve (ed25519) algorithm. This creates two files in ~/.ssh/ directory:
+
+- **id_ed25519** - Private Key - KEEP SECRET
+- **id_ed25519.pub** - Public Key - Shared with Host
+
+```bash
+ssh-keygen -t ed25519 -C "macflow-vm"
+# (Accept the default location/name so it is used automatically)
+# (Leave passphrase empty for passwordless login)
 ```
 
 ### Install GNU Stow
