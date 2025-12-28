@@ -55,8 +55,7 @@ For more details, see [macFlow Reference Context](./docs/Reference.md).
 
 For the full tiling window manager experience, see:
 
-- **Install Tiling WM:** Follow the steps in [macFlow Hyprland](./docs/WM/Hyprland.md) to set up window manager and related tools.
-- **Set up Desktop Environment:** Follow the steps in [macFlow Desktop](./docs/Desktop.md) to finalize the desktop setup.
+- **Install Tiling WM:** Follow the steps in [Hyprland Install](./docs/WM/Hyprland.md) to set up window manager and related tools.
 
 #### (Optional) Additional "Desktop" Enhancements
 

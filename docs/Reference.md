@@ -156,14 +156,16 @@ Install `stow` to manage dotfiles and configurations.
 sudo pacman -S stow
 ```
 
-### Deploy Configurations
+### Deploy Configurations (Dotfiles)
 
-We use `stow` to symlink configuration the **Dot Files** for `macFlow`'s components including:
+We use **GNU Stow** to symlink configuration the **Dot Files** for `macFlow`'s components including:
 
 - Shell profile (`.bash_profile`, `.zshrc`)
 - Utility scripts (`~/bin/`)
 - Foot (Terminal Emulator)
 - Hyprland (Tiling Window Manager) and its components
+
+*Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
 
 ### Configure the Guest side of the File Bridge (SSHFS)
 
@@ -263,6 +265,107 @@ function macunmount() {
     fusermount3 -u ~/macFlow-HOST
     echo "Disconnected from macOS."
 }
+```
+
+## Hyprland Installation Notes
+
+Key components with context of the `macFlow` Hyprland installation.
+
+### Install Hyprland Related Packages
+
+Install the compositor and the necessary ecosystem tools.
+
+```bash
+# Core Desktop
+# - hyprland: The engine
+# - xorg-xwayland: Compatibility for non-Wayland apps (VSCode)
+# - qt5-wayland / qt6-wayland: Sharp text for Qt apps
+# - polkit-gnome: Password prompt agent (GTK styling)
+yay -S hyprland xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
+
+# UI Elements
+# - waybar: Status bar (Hyprland has none built-in)
+# - dunst: Notifications
+# - wofi: App Launcher
+# - hyprpaper: Wallpaper utility
+# We include pipewire-jack explicitly to avoid the "jack2 vs pipewire-jack" prompt
+yay -S waybar dunst wofi hyprpaper pipewire-jack
+
+# Terminal & Fonts
+# - foot: CPU-native Wayland terminal (Fastest for VMs)
+# - ttf-jetbrains-mono-nerd: Developer font
+# - ttf-dejavu: UI Fallback font
+yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
+
+# Host Integration (Clipboard & Resize)
+# - xclip: Clipboard sync
+# - clipnotify: Clipboard watcher
+# - xorg-xwayland: Ensure XWayland is available for legacy X11 apps (like the SPICE agent)
+yay -S xclip clipnotify xorg-xwayland
+
+# (Optional) Configuration tools to make Qt apps look like GTK apps
+yay -S qt5ct qt6ct
+```
+
+### The "Brutalist" Hyprland Config
+
+**File:** ~/.config/hypr/hyprland.conf
+
+This configuration assumes:
+
+- **UTM Settings:** Display is set to `virtio-gpu-gl-pci` (not `ramfb`).
+- **Drivers:** You installed mesa, spice-vdagent, and hyprland.
+- **Philosophy:** "Brutalist" (No blur/shadows/animations) for maximum stability on the VM.
+
+We strip heavy visuals for VM stability.
+
+- **Monitor:** Auto-scales to UTM window size
+- **Input:** Natural scrolling, touchpad tap-to-click
+- **Layout:** Dwindle (Dynamic tiling)
+- **Animations/Blur:** Disabled for performance (virtio-gpu optimization)
+- **Keybindings:** Cmd key, apps, window management, and focus navigation
+- **Autostart Services:** Clipboard sync, Dunst, Waybar, auth & SPICE agent
+
+### Host Integration Scripts
+
+**Location:** ~/.local/bin/
+
+The stow scripts command deployed the following tools to handle the Host-Guest integration.
+
+Due to race conditions and broken internal X11/Wayland bridging on ARM64, we need dedicated scripts to handle the Host-Guest communication via the X11 backend.
+
+- **start-spice:** The master orchestrator. It waits for the XWayland socket to appear before launching the clipboard agent to prevent race conditions.
+- **clipboard-sync:** A watchdog that monitors the X11 clipboard and syncs changes to Wayland (Mac ➔ VM).
+- **clipboard-export:** A helper script bound to Super+Shift+C that pushes Wayland text to the Mac clipboard (VM ➔ Mac).
+
+## Fix: Hyprland Crashes on Startup
+
+### Problem: Hyprland Fails to Start with Seat Error
+
+When you try to launch Hyprland, it immediately exits with an
+Error: "No backend was able to open a seat".
+
+This means Hyprland (specifically the Aquamarine backend) is trying to access the hardware (the "Seat"), but it is being blocked by a permissions issue or a missing service.
+
+Hyprland relies on seatd or logind (part of systemd) to gain access to the GPU/Input devices without being root. Since seatd failed and logind failed, Hyprland has no permission to draw to the screen, so it crashes.
+
+### The Fix: Grant Seat Permissions
+
+We need to ensure your user (macflow) is in the correct group (seat) and that the seatd service is running.
+
+```bash
+# Install seatd (if missing)
+sudo pacman -S seatd
+
+# Add user to seat group
+sudo usermod -aG seat macflow
+
+# Enable and Start the seatd service
+sudo systemctl enable --now seatd
+
+# Reboot
+# Group changes require a re-login/reboot to take effect.
+sudo reboot
 ```
 
 ## Directory Structure

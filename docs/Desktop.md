@@ -32,13 +32,9 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 - **Input:** Capture Input mode for keyboard/mouse focus
 - **Clipboard:** Copy/Paste is handled via **SPICE**
 
-### The File Bridge (SSHFS)
+For details, see [macFlow: File Integration](./Integration/macFlow-Integration.md).
 
-We use **SSHFS** (SSH Filesystem) to reliably share files between the Host (macOS) and Guest (Linux VM).
-
-For details, see [macFlow: File Integration](./Integration/Files.md).
-
-### The "Safety Defusal" (Critical)
+## The "Safety Defusal"
 
 By default, macOS intercepts many critical shortcuts (like `Cmd+Q` to quit) before they ever reach your Linux VM. This guide details how to "defuse" these shortcuts so they pass through to Hyprland safely.
 
@@ -46,7 +42,7 @@ By default, macOS intercepts many critical shortcuts (like `Cmd+Q` to quit) befo
 
 **The Fix:** We will remap these keyboard shortcuts specifically for the UTM application. This ensures that when you press them, macOS ignores the command, allowing Hyprland to receive the keystroke instead.
 
-#### Steps to Defuse
+### Steps to Defuse
 
 1. Open macOS **System Settings**.
 2. Go to **Keyboard** > **Keyboard Shortcuts...**
@@ -59,3 +55,126 @@ By default, macOS intercepts many critical shortcuts (like `Cmd+Q` to quit) befo
 | :-------------------------- | :--------------------- | :------------------------------- |
 | **Quit UTM**                | `Cmd + Opt + Ctrl + Q` | Prevents accidental VM shutdown. |
 | **Close**                   | `Cmd + Opt + Ctrl + W` | Prevents closing the VM window.  |
+
+## Setting for Multiple Monitors
+
+In your Hyprland config (`~/.config/hypr/hyprland.conf`) set it to your largest resolution.
+
+```bash
+monitor = , 3840x2160, auto, 2
+#monitor = , 2880x1864, auto, 2
+```
+
+## Apply GTK Dark Mode
+
+Set GTK apps and dialog boxes to dark mode.
+
+```bash
+# Install nwg-look
+yay -S nwg-look gnome-themes-extra
+
+# Run nwg-look
+nwg-look
+# Set the following per tab:
+# - Widget: Select Adwaita-dark
+# - Color Scheme: Check the box "Prefer Dark Theme"
+# - Icons: Select Adwaita
+# - Cursor: Select Adwaita (fixes the "X" cursor bug)
+# Click "Apply" -> "Close"
+```
+
+## Adjust Resolution
+
+To adjust resolutions for different monitors you can use the `wlr-randr` tool. For example:
+
+2025 MacBook Air:
+
+```bash
+wlr-randr --output Virtual-1 --custom-mode 2880x1864 --scale 2
+```
+
+4k Monitor:
+
+```bash
+wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 2
+```
+
+2560x1440 Monitor:
+
+```bash
+wlr-randr --output Virtual-1 --custom-mode 2560x1440 --scale 2
+```
+
+### Fractional Scaling
+
+You can use fractional scaling (e.g., `1.5`) if you need a balance between crispness and screen real estate.
+
+⚠️ The "Blur" Trade-off:
+
+- **Integer (Scale 2):** Pixel-perfect, crisp, computationally cheap.
+- **Fractional (Scale 1.5):** Requires the GPU/CPU to render at a higher resolution and downsample. This consumes more resources and can result in slightly blurry text in XWayland apps.
+
+```bash
+# Test 1.5x Scaling
+#wlr-randr --output Virtual-1 --custom-mode 2560x1600 --scale 1.5
+wlr-randr --output Virtual-1 --custom-mode 3840x2160 --scale 1.5
+```
+
+## Troubleshooting resolutions
+
+### Tools
+
+Use either ```hyprctl monitors``` or ```wlr-randr``` to get information about your connected displays.
+
+### Stuck in low resolution?
+
+If you are stuck at 1280x800 resolution then:
+
+1) Make sure that the `Retina Mode` setting is checked in the UTM virtual machine settings.
+2) Verify that the SPICE Agent is running without errors with:
+
+```bash
+systemctl status spice-vdagentd
+```
+
+### Boot Resolution (GRUB)
+
+Another option is to set the UTM window to open at a specific resolution by default by editing the GRUB settings.
+
+I found that 3840x2160 worked well on both my macBook and 4K monitors.  Specifically for my 2025 macBook Air this gives me a crisp 4K display in the UTM window with a scale of 2. It dynamically resized to 3420x2146 and is at least reporting to be refreshing at 75 Hz.
+scale: 2.00
+
+```bash
+sudo nano /etc/default/grub
+# Find: GRUB_CMDLINE_LINUX_DEFAULT="..."
+# Add this to the end (inside the quotes): video=Virtual-1:2560x1600@60
+# Example:
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:2560x1600"
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160"
+#GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160@60"
+
+# Update GRUB config
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+#### Display Configuration (Troubleshooting & Fine-Tuning)
+
+Switch to using dynamic scaling in your Hyprland config (`~/.config/hypr/hyprland.conf`) file
+
+```bash
+# 1. Display: Dynamic Resizing (The UTM Advantage)
+# "preferred" tells Hyprland to use whatever resolution the UTM window is resized to.
+# "auto" positions it automatically.
+# "2" scales it for Retina (HiDPI). Change to "1" if you want massive screen real estate.
+monitor=,preferred,auto,2
+```
+
+#### Optional "Force Enable" Flag (e) Fix
+
+You can force a resolution then add an `e` at the end of the monitor line in your grub config.
+
+*Note* This is also handy when switching between monitors then you need.
+
+```bash
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet console=tty1 video=Virtual-1:3840x2160@60e"
+```
