@@ -156,6 +156,115 @@ Install `stow` to manage dotfiles and configurations.
 sudo pacman -S stow
 ```
 
+### Deploy Configurations
+
+We use `stow` to symlink configuration the **Dot Files** for `macFlow`'s components including:
+
+- Shell profile (`.bash_profile`, `.zshrc`)
+- Utility scripts (`~/bin/`)
+- Foot (Terminal Emulator)
+- Hyprland (Tiling Window Manager) and its components
+
+### Configure the Guest side of the File Bridge (SSHFS)
+
+#### Setup Passwordless Access (SSH Keys)
+
+For the mount to work automatically, the Linux VM must log in to the Mac without a password prompt.
+
+#### Configure SSH Host Alias
+
+Create a config entry so you can simply refer to your Mac as `host`.
+
+Add the following block to your SSH config (e.g. ```nano ~/.ssh/config```) with your macOS details:
+
+```text
+Host host
+    HostName MyMac.local
+    User matt
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+#### Copy Public Key to macOS
+
+Run this command from your Linux VM to authorize your key. Replace the placeholders with your actual macOS details.
+
+```bash
+ssh-copy-id host
+```
+
+#### Install and Configure the SSH filesystem (SSHFS) driver
+
+Install the driver and perform a manual mount to verify everything is working:
+
+```bash
+sudo pacman -S sshfs
+```
+
+Enable `user_allow_other` option (Required for permission mapping)
+
+```bash
+# Open the FUSE config file
+sudo nano /etc/fuse.conf
+# Uncomment the line: user_allow_other
+```
+
+#### Setup Persistence (The `macmount` Utility)
+
+Instead of hardcoding the mount into startup scripts (which can hang boot if the network is down), we use a resilient shell function. This allows you to mount the drive from Hyprland or TTY.
+
+Add this to your shell profile (`~/.bash_profile`):
+
+```bash
+# --- macFlow: SSHFS Mount Utility ---
+# Usage: Type 'macmount' to connect, 'macunmount' to disconnect
+
+function macmount() {
+    local MOUNT_POINT="$HOME/macFlow-HOST"
+    local REMOTE_PATH="macFlow-SHARE" # Relative to your Mac Home folder
+
+    # 1. Safety Check: Is it already mounted?
+    if mount | grep -q "$MOUNT_POINT"; then
+        echo "⚡ macOS is already mounted at $MOUNT_POINT"
+        return 0
+    fi
+
+    # 2. Ensure mount point exists
+    if [ ! -d "$MOUNT_POINT" ]; then
+        echo "Creating mount point: $MOUNT_POINT"
+        mkdir -p "$MOUNT_POINT"
+    fi
+
+    # 3. Cleanup stale connections (force unmount if stuck)
+    if [ -e "$MOUNT_POINT" ]; then
+        fusermount3 -u "$MOUNT_POINT" 2>/dev/null
+    fi
+
+    # 4. Mount macOS Shared Folder
+    echo "Connecting to macOS Host..."
+    # - Syntax: sshfs [alias]:[remote_path] [local_path] [options]
+    #   - host: The alias we configured in ~/.ssh/config above
+    #   - remote_path: /Users/matt/macFlow-SHARE
+    #   - local_path: ~/macFlow-HOST
+    #   - options:
+    #     - 'allow_other': allows other users (root) to see files
+    #     - 'reconnect': automatically restores connection after sleep/resume
+    #     - `uid=$(id -u),gid=$(id -g)`: ensures the files appear as owned by your linux user
+    sshfs "host:$REMOTE_PATH" "$MOUNT_POINT" -o allow_other,reconnect,uid=$(id -u),gid=$(id -g)
+
+    # 5. Verify result
+    if [ $? -eq 0 ]; then
+        echo "✅ Success: Shared folder mounted."
+    else
+        echo "❌ Error: Could not connect to Host. Check network or SSH config."
+    fi
+}
+
+function macunmount() {
+    fusermount3 -u ~/macFlow-HOST
+    echo "Disconnected from macOS."
+}
+```
+
 ## Directory Structure
 
 ```text

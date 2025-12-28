@@ -56,16 +56,22 @@ From the **Setup Menu**, select **`Configure System`**
 - **Default Editor:** Select `Nano` (easy for beginners) or `NEOVIM` (experts)
   - **Note:** In this guide, we will use `Nano` to edit files to keep things simple and accessible.
 - **Init System:** Select `SYSTEMD`
-- From the **System Configuration**` menu:
+- From the **System Configuration** menu:
   - From the **User Management** menu:
     - **Default Shell:** Select `bash`
     - **Create User Account**, enter `macflow`
       - Select `Enable macflow as Admistrator and part of wheel group`
       - For comment, enter `macFlow is awesome` or your full name :)
       - Enter and confirm user password
+      - Return to `System Configuration`
+  - Go thru all the other **System Configuration** options and accept defaults except where called out below:
+    - Set **System Hostname** to `macflow`
+    - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
+    - Return to `Main Menu`
       - Select `Return to System Configuration`
     - Go thru each `System Configuration` option and accept defaults except where called out below:
-      - For **Kernel Modules**, add these: `virtio virtio_pci virtio_blk virtio_net virtio_gpu`
+      - For **Kernel Modules** add these: `virtio virtio_pci virtio_blk virtio_net virtio_gpu virtio_balloon virtio_console`
+        - *Why?* These modules provide optimal performance and compatibility with UTM's virtualized hardware.
       - Set **System Hostname** to `macflow`
       - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
       - Return to `Main Menu`

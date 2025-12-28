@@ -48,10 +48,8 @@ For more details, see [macFlow Reference Context](./docs/Reference.md).
   - *See [Arch Linux Install](./docs/Guest-OS/Arch-Install.md) for detailed steps*
 - **Configure Arch:** Set up networking, users, and essential packages
   - *See [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md) for detailed steps*
-
-### (Optional) "Headless" Mode Setup
-
-For lightweight development without a GUI, see [macFlow Headless](./docs/Headless.md).
+- **macFlow Integration:** Set up the integration bridge (Files, Clipboard, Identity)
+  - *See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for detailed steps*
 
 ### (Optional) "Desktop" Mode Setup
 

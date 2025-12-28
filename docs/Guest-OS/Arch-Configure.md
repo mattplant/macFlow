@@ -4,8 +4,9 @@ Configure **Arch Linux ARM (ALARM)** for use with [UTM](../VM/UTM.md) on macOS.
 
 ## Boot Arch Linux
 
-- **Start the VM** in UTM.
-- **Boot:** Select `Arch Linux` from the GRUB menu.
+- **Start the VM** in UTM
+- **Boot:** Select `Arch Linux` from the GRUB menu
+- **Login:** Use the username ("macflow") and password you created during installation
 
 ## Basic System Configuration
 
