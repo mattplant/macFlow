@@ -19,37 +19,40 @@ Download from [mac.getutm.app](https://mac.getutm.app/) or use Homebrew:
 brew install --cask utm
 ```
 
-> *Note:* This installs the free, fully-featured version (supports JIT/Hypervisor), which is preferred over the App Store version for this workflow.
+> *Note:* These install the free, fully-featured version (supports JIT/Hypervisor), which is preferred over the App Store version for this workflow.
 
 ## Create the Virtual Machine
 
-Open UTM and click `Create a New Virtual Machine`.
+Open UTM and create a new VM with these settings:
 
 - **Start**
   - Select `Virtualize` (*Uses Apple `Virtualization.framework` for near-native speed*)
   - Select `Linux`
 - **Hardware**
-  - **Memory:** `4096 MB` (*4 GB*)
-  - **CPU Cores:** `2`
+  - **Memory:** `2048 MB` (*2 GB*)
+  - **CPU Cores:** Leave at `Default` for now.
   - *Note:* You can adjust this later based on performance needs.
+  - **Display Output**
+    - Verify that `Enable display output` is checked.
+    - Check `Enable hardware OpenGL acceleration`.
 - **Linux**
   - **Uncheck** "Use Apple Virtualization"
     - *Why:* This forces QEMU backend, which has better Linux driver support.
+  - **Boot Image Type:** Select `Boot from ISO image`
   - Click `Browse` and select your `archboot-*.iso`.
 - **Storage**
-  - Size: `32 GB`
+  - Size of drive: `32 GB`
 - **Shared Directory**
   - Leave empty
     - *Note:* We use SSHFS for robust file sharing.
 - **Summary**
   - **Name:** `macFlow`
-  - **Notes:** `Arch Linux from Archboot AArch64 ISO for macFlow`
   - **Check** "Open VM Settings"
   - Click `Save`
 
 ## Critical Configuration (The Secret Sauce)
 
-In the Settings window that appears, apply these specific changes to support Hyprland on Apple Silicon:
+In the **Settings** window that appears, apply these specific changes to support macFlow on Apple Silicon:
 
 - **Display (Enable 3D):**
   - **Emulated Display Card:** Select `virtio-gpu-gl-pci`.
@@ -63,6 +66,7 @@ In the Settings window that appears, apply these specific changes to support Hyp
 - **Network:**
   - **Network Mode:** `Bridged (Advanced)`
   - *Why:* Gives the VM a distinct IP address on the LAN, allowing for seamless SSH connections and reliable file mounting.
+- Click `Save`
 
 ## Continue to Arch Linux Base Installation
 

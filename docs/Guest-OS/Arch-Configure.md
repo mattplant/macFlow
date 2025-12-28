@@ -4,8 +4,9 @@ Configure **Arch Linux ARM (ALARM)** for use with [UTM](../VM/UTM.md) on macOS.
 
 ## Boot Arch Linux
 
-- **Start the VM** in UTM.
-- **Boot:** Select `Arch Linux` from the GRUB menu.
+- **Start the VM** in UTM
+- **Boot:** Select `Arch Linux` from the GRUB menu
+- **Login:** Use the username ("macflow") and password you created during installation
 
 ## Basic System Configuration
 
@@ -35,16 +36,17 @@ exit
 
 ## Clone macFlow
 
-Ensure you have cloned the repo into your home directory:
+Clone the macFlow repo into your home directory:
 
 ```bash
+sudo pacman -S git
 cd ~
 git clone https://github.com/mattplant/macFlow.git
 ```
 
-## Configure Arch Linux
+## Execute Script to Configure Arch Linux
 
-Run the macFlow Arch configuration script to automate the setup of drivers, packages, and services.
+Run the `macFlow` Arch Linux configuration script to automate the setup of drivers, packages, and services.
 
 ```bash
 ~/macFlow/scripts/configArch.sh

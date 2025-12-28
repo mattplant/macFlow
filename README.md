@@ -32,37 +32,32 @@ For more details, see [macFlow Reference Context](./docs/Reference.md).
 
 > *Tip:* You can start with ["Headless"](./docs/Headless.md) for lightweight tasks, and switch to ["Desktop"](./docs/Desktop.md) mode later if needed.
 
-## Quick Start Guide
+## Installation
 
 ### Prerequisites
 
 - **Hardware:** A modern Apple Silicon Mac running macOS.
 - **Storage:** At least 20GB of free drive space (Less required for Headless-only setups).
 - **Permissions:** Admin access for Network/Sharing settings.
-- **Software:** [UTM](https://mac.getutm.app/).
-- **ISO:** [Arch Linux Archboot AArch64 ISO](https://release.archboot.com/aarch64/latest/iso/)
 
-### Base Installation
+### Base
 
 - **Create VM:** Open UTM and create a new **Virtualize** machine for Linux
   - *See [UTM Setup](./docs/VM/UTM.md) for recommended settings*
 - **Install Arch:** Boot the ISO and run the installer
   - *See [Arch Linux Install](./docs/Guest-OS/Arch-Install.md) for detailed steps*
-- **Configure Arch:**
+- **Configure Arch:** Set up networking, users, and essential packages
   - *See [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md) for detailed steps*
+- **macFlow Integration:** Set up the integration bridge (Files, Clipboard, Identity)
+  - *See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for detailed steps*
 
-### (Optional) "Headless" Installation
-
-For lightweight development without a GUI, see [macFlow Headless](./docs/Headless.md).
-
-### (Optional) "Desktop" Installation
+### (Optional) "Desktop" Mode Setup
 
 For the full tiling window manager experience, see:
 
-- **Install Tiling WM:** Follow the steps in [Tiling Window Manager](./docs/WM/Hyprland.md) to set up **Hyprland** and related tools.
-- **Set up Desktop Environment:** Follow the steps in [macFlow Desktop](./docs/Desktop.md) to finalize the desktop setup.
+- **Install Tiling WM:** Follow the steps in [Hyprland Install](./docs/WM/Hyprland.md) to set up window manager and related tools.
 
-#### (Optional) Additional Configuration
+#### (Optional) Additional "Desktop" Enhancements
 
 - **Configure Development Tools:** Set up VSCode, git, and other tools by following [Development Tools](./docs/Tools/Development.md).
 

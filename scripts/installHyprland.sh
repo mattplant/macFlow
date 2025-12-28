@@ -53,37 +53,7 @@ else
     success "User added to seat group."
 fi
 
-# --- 3. Deploy Configurations (Dotfiles) ---
-log "Step 3: Linking Dotfiles..."
-
-REPO_DIR="$HOME/macFlow"
-DOTFILES_DIR="$REPO_DIR/dotfiles"
-
-# Ensure repo exists
-if [ ! -d "$DOTFILES_DIR" ]; then
-    warn "Dotfiles directory not found at $DOTFILES_DIR!"
-    warn "Please clone the repo first: git clone https://github.com/mattplant/macFlow.git $HOME/macFlow"
-    exit 1
-fi
-
-cd "$DOTFILES_DIR"
-
-# Ensure target config directory exists
-mkdir -p ~/.config
-
-# Link Packages via Stow
-# We use -v (verbose) and -R (Restow) to refresh links if they exist
-stow -v -R -t ~ hypr      # Hyprland, Waybar, Wofi, Dunst
-stow -v -R -t ~ shell     # .bash_profile, .zshrc
-stow -v -R -t ~ foot      # Foot Terminal config
-stow -v -R -t ~ scripts   # ~/bin/ utilities
-
-# Reload shell profile to apply path changes immediately for this script
-source ~/.bash_profile 2>/dev/null || true
-
-success "Dotfiles linked."
-
-# --- 4. Final Instructions ---
+# --- 3. Final Instructions ---
 echo ""
 success "Hyprland Installation Complete!"
 echo "------------------------------------------------"

@@ -30,9 +30,25 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 
 *Tip:* You can start with "Headless" for lightweight tasks, and switch to "Desktop" mode later if needed.
 
-## Arch Linux Configuration Build notes
+## Linux Installation Notes
 
-Build notes for configuring various components of `macFlow` for use with [UTM](./VM/UTM.md) on macOS.
+Key components with context of the `macFlow` Arch Linux installation.
+
+- Required packages for for minimum system:
+  - `base` - core OS
+  - `iptables-nft` - firewall utilities
+  - `linux` - Linux kernel
+  - `polkit` - privilege management
+  - `btrfs-progs` - BTRFS filesystem tools
+  - `dosfstools` - DOS filesystem utilities
+  - `terminal-fonts` - console fonts
+- We also installed these modules: `virtio virtio_pci virtio_blk virtio_net virtio_gpu`
+
+## Linux Configuration Notes
+
+Key components with context of the `macFlow` Arch Linux configuration.
+
+*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
 
 ### Package Management (yay)
 
@@ -49,7 +65,6 @@ Install `yay` to simplify and expand package management.
 Ensure the core build tools are installed.
 
 ```bash
-# Install prereqs
 # - base-devel: Required for building AUR packages
 # - git: Required for cloning the yay repository
 sudo pacman -S --needed base-devel git
@@ -58,8 +73,6 @@ sudo pacman -S --needed base-devel git
 #### Installation
 
 We must compile `yay` manually once to bootstrap it.
-
-*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
 
 ```bash
 # Clone and Build
@@ -81,23 +94,10 @@ Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration
 ```bash
 # - mesa: 3D acceleration (virtio-gpu)
 # - linux-headers: Kernel headers for module compilation
-yay -S mesa linux-headers
-```
-
-#### Configure Kernel (mkinitcpio)
-
-**Critical Step:** **We must force the kernel to load the `virtio-gpu` module early in the boot process or the screen will remain black.
-
-TODO: Add modules and packages (on this page) to base Arch install if possible.
-
-```bash
-sudo nano /etc/mkinitcpio.conf
-# Action: Find the MODULES=() line and add the following: virtio virtio_pci virtio_blk virtio_net virtio_gpu
-# e.g. MODULES=(btrfs vfat crc32c virtio virtio_pci virtio_blk virtio_net virtio_gpu)
-# Save and Exit
-
-# Regenerate images:
-sudo mkinitcpio -P
+# qemu-guest-agent: Host communication
+# openssh: Remote access
+# avahi, nss-mdns: Hostname resolution (.local)
+yay -S mesa linux-headers qemu-guest-agent openssh avahi nss-mdns
 ```
 
 #### Enable Services
@@ -114,19 +114,7 @@ sudo systemctl start qemu-guest-agent
 Install and enable the SSH daemon and Avahi (Bonjour) for simple hostname resolution.
 
 ```bash
-sudo systemctl enable --now sshd
-
-```bash
-# Install packages
-# - openssh: SSH server/client
-# - avahi: Bonjour/mDNS service discovery
-# - nss-mdns: Allows resolving .local hostnames via mDNS
-yay -S openssh avahi nss-mdns
-
-# Enable the SSH Server
-sudo systemctl enable --now sshd
-
-# Enable Avahi (Bonjour) for .local hostname resolution
+# Enable Avahi Daemon (Bonjour) for .local hostname resolution
 sudo systemctl enable --now avahi-daemon
 
 # Configure Name Resolution: To ensure Arch broadcasts its name correctly
@@ -140,11 +128,24 @@ sudo nano /etc/nsswitch.conf
 # hosts: mymachines files myhostname mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] dns
 ```
 
-#### Generate your SSH key
+Enable QEMU Guest Agent and SSH Services.
 
 ```bash
-# Generate Key (if you haven't already)
-ssh-keygen -t ed25519 -C "macflow"
+sudo systemctl start qemu-guest-agent
+sudo systemctl enable --now sshd
+```
+
+#### Generate your SSH key
+
+Generate a SSH keypair on your the Linux VM using the modern, fast Edwards-curve (ed25519) algorithm. This creates two files in ~/.ssh/ directory:
+
+- **id_ed25519** - Private Key - KEEP SECRET
+- **id_ed25519.pub** - Public Key - Shared with Host
+
+```bash
+ssh-keygen -t ed25519 -C "macflow-vm"
+# (Accept the default location/name so it is used automatically)
+# (Leave passphrase empty for passwordless login)
 ```
 
 ### Install GNU Stow
@@ -153,6 +154,218 @@ Install `stow` to manage dotfiles and configurations.
 
 ```bash
 sudo pacman -S stow
+```
+
+### Deploy Configurations (Dotfiles)
+
+We use **GNU Stow** to symlink configuration the **Dot Files** for `macFlow`'s components including:
+
+- Shell profile (`.bash_profile`, `.zshrc`)
+- Utility scripts (`~/bin/`)
+- Foot (Terminal Emulator)
+- Hyprland (Tiling Window Manager) and its components
+
+*Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
+
+### Configure the Guest side of the File Bridge (SSHFS)
+
+#### Setup Passwordless Access (SSH Keys)
+
+For the mount to work automatically, the Linux VM must log in to the Mac without a password prompt.
+
+#### Configure SSH Host Alias
+
+Create a config entry so you can simply refer to your Mac as `host`.
+
+Add the following block to your SSH config (e.g. ```nano ~/.ssh/config```) with your macOS details:
+
+```text
+Host host
+    HostName MyMac.local
+    User matt
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+#### Copy Public Key to macOS
+
+Run this command from your Linux VM to authorize your key. Replace the placeholders with your actual macOS details.
+
+```bash
+ssh-copy-id host
+```
+
+#### Install and Configure the SSH filesystem (SSHFS) driver
+
+Install the driver and perform a manual mount to verify everything is working:
+
+```bash
+sudo pacman -S sshfs
+```
+
+Enable `user_allow_other` option (Required for permission mapping)
+
+```bash
+# Open the FUSE config file
+sudo nano /etc/fuse.conf
+# Uncomment the line: user_allow_other
+```
+
+#### Setup Persistence (The `macmount` Utility)
+
+Instead of hardcoding the mount into startup scripts (which can hang boot if the network is down), we use a resilient shell function. This allows you to mount the drive from Hyprland or TTY.
+
+Add this to your shell profile (`~/.bash_profile`):
+
+```bash
+# --- macFlow: SSHFS Mount Utility ---
+# Usage: Type 'macmount' to connect, 'macunmount' to disconnect
+
+function macmount() {
+    local MOUNT_POINT="$HOME/macFlow-HOST"
+    local REMOTE_PATH="macFlow-SHARE" # Relative to your Mac Home folder
+
+    # 1. Safety Check: Is it already mounted?
+    if mount | grep -q "$MOUNT_POINT"; then
+        echo "⚡ macOS is already mounted at $MOUNT_POINT"
+        return 0
+    fi
+
+    # 2. Ensure mount point exists
+    if [ ! -d "$MOUNT_POINT" ]; then
+        echo "Creating mount point: $MOUNT_POINT"
+        mkdir -p "$MOUNT_POINT"
+    fi
+
+    # 3. Cleanup stale connections (force unmount if stuck)
+    if [ -e "$MOUNT_POINT" ]; then
+        fusermount3 -u "$MOUNT_POINT" 2>/dev/null
+    fi
+
+    # 4. Mount macOS Shared Folder
+    echo "Connecting to macOS Host..."
+    # - Syntax: sshfs [alias]:[remote_path] [local_path] [options]
+    #   - host: The alias we configured in ~/.ssh/config above
+    #   - remote_path: /Users/matt/macFlow-SHARE
+    #   - local_path: ~/macFlow-HOST
+    #   - options:
+    #     - 'allow_other': allows other users (root) to see files
+    #     - 'reconnect': automatically restores connection after sleep/resume
+    #     - `uid=$(id -u),gid=$(id -g)`: ensures the files appear as owned by your linux user
+    sshfs "host:$REMOTE_PATH" "$MOUNT_POINT" -o allow_other,reconnect,uid=$(id -u),gid=$(id -g)
+
+    # 5. Verify result
+    if [ $? -eq 0 ]; then
+        echo "✅ Success: Shared folder mounted."
+    else
+        echo "❌ Error: Could not connect to Host. Check network or SSH config."
+    fi
+}
+
+function macunmount() {
+    fusermount3 -u ~/macFlow-HOST
+    echo "Disconnected from macOS."
+}
+```
+
+## Hyprland Installation Notes
+
+Key components with context of the `macFlow` Hyprland installation.
+
+### Install Hyprland Related Packages
+
+Install the compositor and the necessary ecosystem tools.
+
+```bash
+# Core Desktop
+# - hyprland: The engine
+# - xorg-xwayland: Compatibility for non-Wayland apps (VSCode)
+# - qt5-wayland / qt6-wayland: Sharp text for Qt apps
+# - polkit-gnome: Password prompt agent (GTK styling)
+yay -S hyprland xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
+
+# UI Elements
+# - waybar: Status bar (Hyprland has none built-in)
+# - dunst: Notifications
+# - wofi: App Launcher
+# - hyprpaper: Wallpaper utility
+# We include pipewire-jack explicitly to avoid the "jack2 vs pipewire-jack" prompt
+yay -S waybar dunst wofi hyprpaper pipewire-jack
+
+# Terminal & Fonts
+# - foot: CPU-native Wayland terminal (Fastest for VMs)
+# - ttf-jetbrains-mono-nerd: Developer font
+# - ttf-dejavu: UI Fallback font
+yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
+
+# Host Integration (Clipboard & Resize)
+# - xclip: Clipboard sync
+# - clipnotify: Clipboard watcher
+# - xorg-xwayland: Ensure XWayland is available for legacy X11 apps (like the SPICE agent)
+yay -S xclip clipnotify xorg-xwayland
+
+# (Optional) Configuration tools to make Qt apps look like GTK apps
+yay -S qt5ct qt6ct
+```
+
+### The "Brutalist" Hyprland Config
+
+**File:** ~/.config/hypr/hyprland.conf
+
+This configuration assumes:
+
+- **UTM Settings:** Display is set to `virtio-gpu-gl-pci` (not `ramfb`).
+- **Drivers:** You installed mesa, spice-vdagent, and hyprland.
+- **Philosophy:** "Brutalist" (No blur/shadows/animations) for maximum stability on the VM.
+
+We strip heavy visuals for VM stability.
+
+- **Monitor:** Auto-scales to UTM window size
+- **Input:** Natural scrolling, touchpad tap-to-click
+- **Layout:** Dwindle (Dynamic tiling)
+- **Animations/Blur:** Disabled for performance (virtio-gpu optimization)
+- **Keybindings:** Cmd key, apps, window management, and focus navigation
+- **Autostart Services:** Clipboard sync, Dunst, Waybar, auth & SPICE agent
+
+### Host Integration Scripts
+
+**Location:** ~/.local/bin/
+
+The stow scripts command deployed the following tools to handle the Host-Guest integration.
+
+Due to race conditions and broken internal X11/Wayland bridging on ARM64, we need dedicated scripts to handle the Host-Guest communication via the X11 backend.
+
+- **start-spice:** The master orchestrator. It waits for the XWayland socket to appear before launching the clipboard agent to prevent race conditions.
+- **clipboard-sync:** A watchdog that monitors the X11 clipboard and syncs changes to Wayland (Mac ➔ VM).
+- **clipboard-export:** A helper script bound to Super+Shift+C that pushes Wayland text to the Mac clipboard (VM ➔ Mac).
+
+## Fix: Hyprland Crashes on Startup
+
+### Problem: Hyprland Fails to Start with Seat Error
+
+When you try to launch Hyprland, it immediately exits with an
+Error: "No backend was able to open a seat".
+
+This means Hyprland (specifically the Aquamarine backend) is trying to access the hardware (the "Seat"), but it is being blocked by a permissions issue or a missing service.
+
+Hyprland relies on seatd or logind (part of systemd) to gain access to the GPU/Input devices without being root. Since seatd failed and logind failed, Hyprland has no permission to draw to the screen, so it crashes.
+
+### The Fix: Grant Seat Permissions
+
+We need to ensure your user (macflow) is in the correct group (seat) and that the seatd service is running.
+
+```bash
+# Install seatd (if missing)
+sudo pacman -S seatd
+
+# Add user to seat group
+sudo usermod -aG seat macflow
+
+# Enable and Start the seatd service
+sudo systemctl enable --now seatd
+
+# Reboot
+# Group changes require a re-login/reboot to take effect.
+sudo reboot
 ```
 
 ## Directory Structure
