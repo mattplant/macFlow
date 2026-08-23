@@ -73,6 +73,10 @@ source "qemu" "arch_arm" {
   ssh_password = "packer" # Must match what we set in install_base.sh
   ssh_timeout  = "20m"
 
+  # Halt the guest cleanly. Without this Packer kills the QEMU process outright,
+  # which can leave the ext4 filesystem with a dirty journal on first boot.
+  shutdown_command = "shutdown -P now"
+
   # --- Boot Automation ---
   # This types the keys to get through the Archboot menu
   http_directory = "scripts" # Serves our scripts folder on a local port

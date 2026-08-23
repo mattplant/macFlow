@@ -40,6 +40,14 @@ For more details, see [macFlow Reference Context](./docs/Reference.md).
 - **Storage:** At least 20GB of free drive space (Less required for Headless-only mode).
 - **Permissions:** Admin access for Network/Sharing settings.
 
+### Choose a Build Path
+
+The base Arch VM can be built two ways. Everything after it is identical.
+
+- **Manual (default):** Step through the Archboot installer yourself, following the Core Setup below. Best the first time — you see what every layer does.
+- **Automated (IaC):** Build a base image with a single `packer build`, then import it into UTM and skip the *Install Arch* step.
+  - *See [Packer Base Image](./packer/README.md) for prerequisites and usage*
+
 ### Core ("Headless" Mode) Setup
 
 - **Create VM:** Open UTM and create a new **Virtualize** machine for Linux

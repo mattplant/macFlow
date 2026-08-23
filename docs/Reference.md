@@ -380,9 +380,10 @@ macFlow/
 │   ├── WM/             # Hyprland and Waybar configuration
 │   ├── Desktop.md      # Desktop Mode documentation
 │   ├── Headless.md     # Headless Mode documentation
-│   ├── Reference.md    # Hyprland and Waybar configuration
+│   ├── Reference.md    # Design philosophy and reference
 │   └── Tips.md         # Tips & Tricks
-├── dotfiles/            # Source configuration files (Stow targets)
+├── dotfiles/           # Source configuration files (Stow targets)
+├── packer/             # IaC: Packer template for automated base image builds
 ├── scripts/            # Installation and setup scripts
 ├── LICENSE             # Source Code License (MIT)
 ├── LICENSE-DOCS.md     # Documentation License (CC BY 4.0)
