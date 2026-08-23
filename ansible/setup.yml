@@ -164,13 +164,27 @@
         regexp: '^#?\s*user_allow_other'
         line: user_allow_other
 
-    - name: Create the macOS mount point
+    # The mount point stays read-only while nothing is mounted. A writable
+    # directory here silently swallows files that never reach the Mac; macmount
+    # opens it to 0700 only long enough to mount.
+    #
+    # Skipped while a mount is live -- otherwise the file module would apply
+    # this mode straight through the mount, onto the Mac's shared folder.
+    - name: Check whether the macOS share is currently mounted
+      ansible.builtin.command:
+        cmd: mountpoint -q /home/{{ macflow_user }}/macFlow-HOST
+      register: macflow_mountpoint
+      changed_when: false
+      failed_when: false
+
+    - name: Create the macOS mount point (read-only while unmounted)
       ansible.builtin.file:
         path: "/home/{{ macflow_user }}/macFlow-HOST"
         state: directory
         owner: "{{ macflow_user }}"
         group: "{{ macflow_user }}"
-        mode: "0755"
+        mode: "0500"
+      when: macflow_mountpoint.rc != 0
 
     # ------------------------------------------------------------------
     # User SSH identity

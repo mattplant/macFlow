@@ -114,9 +114,26 @@ then writes the `host` SSH alias and authorizes this VM on your Mac.
 
 ### Usage
 
-From inside the Linux VM (or via SSH), use the aliases:
+From inside the Linux VM (or via SSH), use these shell functions:
 
 - Connect: `macmount`
-  - Mounts macOS ~/macFlow-SHARE to Linux ~/macFlow-HOST.
+  - Mounts macOS `~/macFlow-SHARE` to Linux `~/macFlow-HOST`.
 - Disconnect: `macunmount`
   - Unmounts the shared folder from the Linux VM.
+- Check: `macstatus`
+  - Reports whether the share is currently mounted.
+
+> *Why the two names differ:* `macFlow-SHARE` is the folder you share **out** from
+> macOS; `macFlow-HOST` is where **the host's** files appear inside the VM. Same
+> directory, named for whichever side you are standing on.
+
+### The mount point is read-only when unmounted
+
+`~/macFlow-HOST` is deliberately kept at mode `0500` while nothing is mounted, and
+`macmount` opens it only long enough to mount.
+
+Without that, an unmounted `~/macFlow-HOST` is an ordinary writable directory:
+files you save there succeed, look completely normal, and never reach your Mac —
+then vanish from view the next time you mount over them. If you see
+`Permission denied` writing to `~/macFlow-HOST`, that is the guard telling you the
+share is not mounted. Run `macmount`.
