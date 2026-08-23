@@ -114,8 +114,10 @@ build {
   provisioner "shell" {
     inline = [
       "echo '--- Installing Ansible in the guest ---'",
-      # Pulls in Python as a dependency, which Ansible needs anyway.
-      "pacman -Sy --noconfirm ansible",
+      # -Syu, never -Sy: refreshing the DB without upgrading is a partial
+      # upgrade, and installing into it pulls newer libs that file-conflict
+      # with the older installed ones. Pulls in Python as a dependency too.
+      "pacman -Syu --noconfirm ansible",
     ]
   }
 

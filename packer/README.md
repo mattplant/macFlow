@@ -172,5 +172,7 @@ that matters to you.
 - **No cleanup provisioner**, so the build credentials survive into the image. See
   the warning above. This is the obvious next Ansible task.
 - **No local package mirror**, so every build re-downloads the base system.
-- **`pacman -Sy` before installing Ansible** is a partial-upgrade pattern. It is safe
-  here only because `pacstrap` ran moments earlier against the same mirror state.
+- **Every build performs a full `pacman -Syu`** before installing Ansible. Arch does
+  not support partial upgrades: `-Sy` followed by an install pulls newer libraries
+  that file-conflict with the older ones on disk. Verified the hard way on a
+  months-old guest, where `-Sy` failed with a `libstdc++` / `gcc-libs` conflict.

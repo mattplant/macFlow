@@ -40,8 +40,11 @@ if [ ! -f "$PLAYBOOK" ]; then
 fi
 
 # --- Install Ansible ---
-log "Installing Ansible..."
-sudo pacman -S --needed --noconfirm ansible
+# -Syu, not -S: Arch does not support partial upgrades. Installing a package
+# against a stale or half-synced database pulls in newer libraries that
+# file-conflict with the older ones already on disk.
+log "Installing Ansible (this performs a full system upgrade first)..."
+sudo pacman -Syu --needed --noconfirm ansible
 
 # --- Apply the Playbook ---
 log "Applying $PLAYBOOK to this machine..."
