@@ -98,11 +98,11 @@ Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration
 
 ```bash
 # - mesa: 3D acceleration (virtio-gpu)
-# - linux-headers: Kernel headers for module compilation
+# - linux-aarch64-headers: Kernel headers for module compilation (ALARM name)
 # qemu-guest-agent: Host communication
 # openssh: Remote access
 # avahi, nss-mdns: Hostname resolution (.local)
-yay -S mesa linux-headers qemu-guest-agent openssh avahi nss-mdns
+yay -S mesa linux-aarch64-headers qemu-guest-agent openssh avahi nss-mdns
 ```
 
 #### Enable Services
