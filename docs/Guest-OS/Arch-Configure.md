@@ -5,7 +5,8 @@ Configure **Arch Linux ARM (ALARM)** for use with [UTM](../VM/UTM.md) on macOS.
 ## Boot Arch Linux
 
 - **Start the VM** in UTM
-- **Boot:** Select `Arch Linux` from the GRUB menu
+- **Boot:** Select `Arch Linux` from the boot menu
+  - *Manual installs use GRUB; [Packer-built images](../../packer/README.md) use systemd-boot. Either way, pick `Arch Linux`.*
 - **Login:** Use the username ("macflow") and password you created during installation
 
 ## Basic System Configuration
@@ -33,6 +34,11 @@ usermod -aG wheel macflow
 # Return to standard user
 exit
 ```
+
+> ⚠️ **Log out and back in before continuing.** Group membership is only applied at
+> login, so your current shell does not know it is in `wheel` yet and `sudo` will
+> still refuse. If you created `macflow` as an Administrator during installation it
+> is already in `wheel` and this whole section is a no-op — check with `id -nG`.
 
 ## Clone macFlow
 

@@ -12,7 +12,8 @@ This can be done by many different ways including:
 - graphical menus within your Linux desktop environment
 - or request it thru the UTM app menu: **Virtual Machine** > **Power** > **Request power down**
 
-You can also use but a more user-friendly way is to use Hyprland's built-in power menu.
+In Desktop Mode, `Super + Shift + Q` exits Hyprland and returns you to the TTY, where
+`sudo poweroff` shuts the VM down cleanly. Hyprland has no built-in power menu.
 
 ## Desktop Mode
 
@@ -27,4 +28,4 @@ For a distraction-free development flow, click the **Capture Mouse** (aka "*Capt
 - **Mouse Containment:** It locks the cursor to the VM window (or screen when in full-screen mode).
 - **Keyboard Priority:** It blocks macOS system shortcuts (like Spotlight or Mission Control), allowing you to repurpose those keys entirely for your internal Hyprland workflow. And it allows those shortcuts to work properly inside the VM.
 
-I also highly recommend [setting up the "safety defusal" keyboard shortcuts](./Desktop.md#the-safety-defusal-critical) to prevent accidental VM termination.
+I also highly recommend [setting up the "safety defusal" keyboard shortcuts](./Desktop.md#the-safety-defusal) to prevent accidental VM termination.

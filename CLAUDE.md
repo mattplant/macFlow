@@ -40,7 +40,7 @@ macFlow/
 
 - **Host:** Apple Silicon Mac (macOS). All hardware-sensitive tasks stay here.
 - **Guest:** Arch Linux ARM64 inside UTM (QEMU with HVF acceleration).
-- **Bridge:** Files via SSHFS, clipboard via SPICE (Desktop) or SSH (Headless), git identity via SSH Agent Forwarding.
+- **Bridge:** Files via SSHFS, clipboard via SPICE (Desktop) or the terminal emulator (Headless), git identity via SSH Agent Forwarding.
 - **Package manager in VM:** `yay` (AUR helper wrapping `pacman`).
 - **Dotfile management:** GNU Stow — configs live in `dotfiles/` and are symlinked into `~` inside the VM.
 - **IaC:** Packer builds the image (`packer/`); Ansible configures the guest (`ansible/setup.yml`). The playbook runs guest-side in both paths — via `ansible-local` during a Packer build, and via `scripts/configArch.sh` on a manual install.

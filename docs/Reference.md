@@ -17,9 +17,9 @@ The foundational goal is to maintain the reliability of modern Apple Silicon and
 
 To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver limitations on Apple Silicon:
 
-- **Files:** macOS `~/macFlow` directory is mounted into the VM via **SSHFS**.
-- **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
-- **Identity:** Git credentials are passed via **SSH Agent Forwarding** (Headless Mode).
+- **Files:** the macOS `~/macFlow-SHARE` folder is mounted inside the VM at `~/macFlow-HOST`, via **SSHFS**.
+- **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or your **terminal emulator** (Headless Mode).
+- **Identity:** Git credentials are passed via **SSH Agent Forwarding** (both modes).
 
 ## Modes
 
@@ -37,12 +37,12 @@ Key components with context of the `macFlow` Arch Linux installation.
 - Required packages for for minimum system:
   - `base` - core OS
   - `iptables-nft` - firewall utilities
-  - `linux` - Linux kernel
+  - `linux-aarch64` - Linux kernel (Arch Linux ARM's aarch64 kernel)
   - `polkit` - privilege management
   - `btrfs-progs` - BTRFS filesystem tools
   - `dosfstools` - DOS filesystem utilities
-  - `terminal-fonts` - console fonts
-- We also installed these modules: `virtio virtio_pci virtio_blk virtio_net virtio_gpu`
+  - `terminus-font` - console fonts
+- We also installed these modules: `virtio virtio_pci virtio_blk virtio_net virtio_gpu virtio_balloon virtio_console`
 
 ## Linux Configuration Notes
 
@@ -165,8 +165,8 @@ sudo pacman -S stow
 
 We use **GNU Stow** to symlink configuration the **Dot Files** for `macFlow`'s components including:
 
-- Shell profile (`.bash_profile`, `.zshrc`)
-- Utility scripts (`~/bin/`)
+- Shell profile (`.bashrc`, `.bash_profile`)
+- Utility scripts (into `~/.local/bin/`)
 - Foot (Terminal Emulator)
 - Hyprland (Tiling Window Manager) and its components
 
@@ -305,8 +305,7 @@ yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
 # Host Integration (Clipboard & Resize)
 # - xclip: Clipboard sync
 # - clipnotify: Clipboard watcher
-# - xorg-xwayland: Ensure XWayland is available for legacy X11 apps (like the SPICE agent)
-yay -S xclip clipnotify xorg-xwayland
+yay -S xclip clipnotify
 
 # (Optional) Configuration tools to make Qt apps look like GTK apps
 yay -S qt5ct qt6ct
