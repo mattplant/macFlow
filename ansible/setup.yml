@@ -9,6 +9,12 @@
 #
 # Everything here is non-interactive. The parts that need to talk to your Mac
 # (hostname, username, ssh-copy-id) live in scripts/connect_mac.sh instead.
+#
+# Linting (on macOS, where Homebrew keeps ansible-lint and the collections in
+# separate formulae, so lint cannot see community.general by default):
+#
+#   COLL=$(ls -d /opt/homebrew/opt/ansible/libexec/lib/python*/site-packages)
+#   ANSIBLE_COLLECTIONS_PATH="$COLL" ansible-lint ansible/setup.yml
 
 - name: Configure the macFlow Arch Linux guest
   hosts: all
@@ -53,7 +59,7 @@
     # pacman is enough. yay is bootstrapped separately, for AUR packages the
     # Desktop Mode install needs later.
     - name: Install base system packages
-      ansible.builtin.pacman:
+      community.general.pacman:
         name:
           - base-devel          # required to build AUR packages
           - git                 # cloning this repo and the yay PKGBUILD
@@ -89,12 +95,14 @@
             repo: https://aur.archlinux.org/yay.git
             dest: /tmp/yay
             version: master
+          become: true
           become_user: "{{ macflow_user }}"
 
         - name: Build the yay package
           ansible.builtin.command:
             cmd: makepkg --noconfirm --clean
             chdir: /tmp/yay
+          become: true
           become_user: "{{ macflow_user }}"
           changed_when: true
 
@@ -105,7 +113,7 @@
           register: yay_package
 
         - name: Install yay
-          ansible.builtin.pacman:
+          community.general.pacman:
             name: "{{ yay_package.files | map(attribute='path') | list }}"
             state: present
 
@@ -174,6 +182,7 @@
           ssh-keygen -t ed25519 -C "{{ macflow_user }}@macflow"
           -f /home/{{ macflow_user }}/.ssh/id_ed25519 -N ""
         creates: "/home/{{ macflow_user }}/.ssh/id_ed25519"
+      become: true
       become_user: "{{ macflow_user }}"
 
     # ------------------------------------------------------------------
@@ -187,6 +196,7 @@
         # Never clobber local edits -- on the manual path the user already
         # cloned this repo and may be working in it.
         update: false
+      become: true
       become_user: "{{ macflow_user }}"
 
     - name: Check for pre-existing shell dotfiles
@@ -201,7 +211,7 @@
       ansible.builtin.command:
         cmd: >-
           mv /home/{{ macflow_user }}/{{ item.item }}
-             /home/{{ macflow_user }}/{{ item.item }}.bak
+          /home/{{ macflow_user }}/{{ item.item }}.bak
         removes: "/home/{{ macflow_user }}/{{ item.item }}"
       loop: "{{ existing_dotfiles.results }}"
       loop_control:
@@ -209,6 +219,7 @@
       when:
         - item.stat.exists
         - item.stat.isreg
+      become: true
       become_user: "{{ macflow_user }}"
 
     - name: Ensure the XDG config directory exists
@@ -224,6 +235,7 @@
         cmd: "stow --restow --target /home/{{ macflow_user }} {{ item }}"
         chdir: "{{ macflow_repo_dir }}/dotfiles"
       loop: "{{ stow_packages }}"
+      become: true
       become_user: "{{ macflow_user }}"
       register: stow_result
       changed_when: stow_result.stderr | length > 0
