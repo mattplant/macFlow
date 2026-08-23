@@ -11,13 +11,26 @@ packer {
   }
 }
 
+variable "iso_url" {
+  type        = string
+  description = "Archboot aarch64 installer ISO."
+
+  # Archboot keeps exactly ONE build per month directory, and rewrites the
+  # CURRENT month's entry as new builds ship -- so a URL inside the current
+  # month 404s within days. A PREVIOUS month's directory is frozen and stays
+  # valid until pruned, which is roughly six months.
+  #
+  # So: always pin to a completed month, never the current one or /latest/.
+  # When this 404s, pick the newest build from a completed month at
+  # https://release.archboot.com/aarch64/ and update this default.
+  # Avoid the "-local" and "-latest" filename variants.
+  default = "https://release.archboot.com/aarch64/2026.07/iso/archboot-2026.07.29-02.30-7.1.5-2-aarch64-ARCH-aarch64.iso"
+}
+
 source "qemu" "arch_arm" {
   # --- ISO Configuration ---
-  # Using Archboot for ARM64.
-  # Pin to the DATED archive dir, not /latest/. Archboot's "latest" holds only the
-  # current build, so a dated filename under it 404s as soon as a new one ships.
-  # Dated dirs persist (~6 months) before being pruned; bump this when it expires.
-  iso_url = "https://release.archboot.com/aarch64/2026.08/iso/archboot-2026.08.20-02.07-7.2.0-1-aarch64-ARCH-aarch64.iso"
+  # Using Archboot for ARM64. Overridable: packer build -var iso_url=...
+  iso_url = var.iso_url
   # Archboot publishes only GPG .sig files, no sha256sums, so there is no simple
   # checksum to pin. Acceptable since this is not a production image.
   iso_checksum = "none"

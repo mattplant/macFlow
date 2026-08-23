@@ -154,14 +154,24 @@ on a Packer-built image. Use `wlr-randr` or the Hyprland monitor config instead.
 
 ### The ISO URL expires
 
-`iso_url` pins a **dated** Archboot directory rather than `/latest/`, because
-Archboot's `latest` folder only ever holds the current build — a dated filename
-under it starts returning 404 as soon as a new one ships. Dated directories are
-pruned after roughly six months.
+Archboot keeps exactly **one build per month directory**, and rewrites the
+**current** month's entry as new builds ship. A URL inside the current month
+therefore starts 404ing within days — an earlier version of this template pinned
+`2026.08.20` and it was gone three days later.
 
-When the build fails to download the ISO, pick a current one from
+A **completed** month's directory is frozen and stays valid until pruned, roughly
+six months out. So `iso_url` always points at a finished month, never the current
+one and never `/latest/`.
+
+When it does 404, pick the newest build from a *completed* month at
 [release.archboot.com/aarch64](https://release.archboot.com/aarch64/) and update
-`iso_url`.
+the `iso_url` variable default — or override it for one run without editing:
+
+```bash
+packer build -var iso_url="https://release.archboot.com/aarch64/YYYY.MM/iso/archboot-....iso" macflow.pkr.hcl
+```
+
+Avoid the `-local` and `-latest` filename variants.
 
 `iso_checksum` is `"none"` because Archboot publishes GPG signatures rather than a
 `sha256sums` file. Acceptable for a scratch image; verify the signature manually if
