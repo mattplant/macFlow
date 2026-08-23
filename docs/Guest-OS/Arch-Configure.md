@@ -67,8 +67,21 @@ Everything above is unattended. Linking the VM to your Mac needs your input
 ~/macFlow/scripts/connect_mac.sh
 ```
 
-This regenerates the VM's SSH host keys, writes the `host` alias to `~/.ssh/config`,
-and authorizes this VM on your Mac.
+It asks for your Mac's hostname and username, verifies it can actually reach your
+Mac on port 22, and only then regenerates the VM's SSH host keys, writes the `host`
+alias to `~/.ssh/config`, and authorizes this VM on your Mac. If anything is wrong it
+aborts without changing a thing, so it is safe to re-run.
+
+*Finding your Mac's hostname:* it is **not** the friendly name ("Matt's MacBook Air").
+Run this on macOS and add `.local`:
+
+```bash
+# On your Mac
+scutil --get LocalHostName    # e.g. CSW020  ->  enter CSW020.local
+```
+
+An IP address works too. The script offers a detected default where it can, so on a
+re-run you can usually just press Enter.
 
 *Before running it*, make sure on macOS that **Remote Login** is ON
 (System Settings > General > Sharing) and that the shared folder exists:
