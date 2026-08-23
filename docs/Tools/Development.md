@@ -2,19 +2,19 @@
 
 Development Tools for the macFlow project.
 
-## VSCode
+## VS Code
 
 ### Strategy
 
-Options for running VSCode in this architecture:
+Options for running VS Code in this architecture:
 
 - **Option A: Hybrid (Recommended for "Headless" Mode)**
-  - Install VSCode on **macOS**.
+  - Install VS Code on **macOS**.
   - Use the **Remote - SSH** extension to connect to `macflow.local`.
   - **Pros:** Native macOS UI/Fonts, maximum battery life, zero latency typing.
 
 - **Option B: VM Native (Recommended for "Desktop" Mode)**
-  - Install VSCode inside **Arch Linux**.
+  - Install VS Code inside **Arch Linux**.
   - **Pros:** Full GUI integration with Hyprland workspace rules.
 
 ## Installation (VM Native)
@@ -28,15 +28,15 @@ yay -S visual-studio-code-bin
 
 ### Configuration: Native Wayland Support
 
-By default, VSCode runs using XWayland. It is stable but might look slightly blurry on HiDPI screens unless you force high scaling.
+By default, VS Code runs using XWayland. It is stable but might look slightly blurry on HiDPI screens unless you force high scaling.
 
-To force VSCode to run natively on Wayland (sharper text, no X11 overhead), we can create an alias.
+To force VS Code to run natively on Wayland (sharper text, no X11 overhead), we can create an alias.
 
 ```bash
 # Edit your shell profile
 nano ~/.bash_profile
 
-# Add this alias to force VSCode to use Wayland backend (Ozone)
+# Add this alias to force VS Code to use Wayland backend (Ozone)
 alias code='code --enable-features=UseOzonePlatform --ozone-platform=wayland'
 ```
 
@@ -48,7 +48,7 @@ source ~/.bash_profile
 
 *Note:* If you experience flickering or missing window borders, remove the alias to revert to the stable XWayland mode.
 
-### Launch VSCode with Wayland Support
+### Launch VS Code with Wayland Support
 
 From the terminal, simply run:
 
@@ -65,7 +65,7 @@ Set up your Git identity.
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 
-# Editor (Set VSCode as default for commit messages)
+# Editor (Set VS Code as default for commit messages)
 git config --global core.editor "code --wait"
 
 # Default Branch

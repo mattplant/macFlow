@@ -25,7 +25,7 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 
 `macFlow` supports two distinct operating modes.
 
-- **"Headless" Mode:** No Linux GUI. You use macOS native terminals and VSCode Remote to interact with the Linux engine. Extremely lightweight, max battery efficiency, zero maintenance, native macOS fonts/rendering. For more info, see [macFlow Headless](./Headless.md).
+- **"Headless" Mode:** No Linux GUI. You use macOS native terminals and VS Code Remote to interact with the Linux engine. Extremely lightweight, max battery efficiency, zero maintenance, native macOS fonts/rendering. For more info, see [macFlow Headless](./Headless.md).
 - **"Desktop" Mode:** A full Tiling Window Manager environment inside the VM. The complete tiling experience (Dwindle layout), distraction-free focus. For more info, see [macFlow Desktop](./Desktop.md).
 
 *Tip:* You can start with "Headless" for lightweight tasks, and switch to "Desktop" mode later if needed.
@@ -56,7 +56,7 @@ Install `yay` to simplify and expand package management.
 
 #### Why `yay`?
 
-- **Access to AUR:** Required for packages not in the official ARM repos (specifically **VSCode ARM64** binaries and proprietary fonts).
+- **Access to AUR:** Required for packages not in the official ARM repos (specifically **VS Code ARM64** binaries and proprietary fonts).
 - **Unified Workflow:** `yay` mirrors `pacman` syntax for updates and installation
 - **Automation:** Handles cloning, compiling, and dependency resolution automatically
 
@@ -278,7 +278,7 @@ Install the compositor and the necessary ecosystem tools.
 ```bash
 # Core Desktop
 # - hyprland: The engine
-# - xorg-xwayland: Compatibility for non-Wayland apps (VSCode)
+# - xorg-xwayland: Compatibility for non-Wayland apps (VS Code)
 # - qt5-wayland / qt6-wayland: Sharp text for Qt apps
 # - polkit-gnome: Password prompt agent (GTK styling)
 yay -S hyprland xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
@@ -375,7 +375,7 @@ macFlow/
 ├── docs/               # Documentation
 │   ├── Guest-OS/       # Arch Linux installation and configuration
 │   ├── Integration/    # SSH, SSHFS, and Bridge configuration
-│   ├── Tools/          # VSCode, git config, etc.
+│   ├── Tools/          # VS Code, git config, etc.
 │   ├── VM/             # UTM configuration
 │   ├── WM/             # Hyprland and Waybar configuration
 │   ├── Desktop.md      # Desktop Mode documentation

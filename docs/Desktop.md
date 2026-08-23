@@ -30,7 +30,8 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 
 - **Files:** Files are shared via **SSHFS**
 - **Input:** Capture Input mode for keyboard/mouse focus
-- **Clipboard:** Copy/Paste is handled via **SPICE**
+- **Clipboard:** Copy/Paste is handled via **SSH** (Headless Mode) or **SPICE** (Desktop Mode).
+- **Identity:** Git credentials are passed via **SSH Agent Forwarding**.
 
 For details, see [macFlow: File Integration](./Integration/macFlow-Integration.md).
 

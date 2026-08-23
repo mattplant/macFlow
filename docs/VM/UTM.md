@@ -39,7 +39,7 @@ Open UTM and create a new VM with these settings:
   - **Uncheck** "Use Apple Virtualization"
     - *Why:* This forces QEMU backend, which has better Linux driver support.
   - **Boot Image Type:** Select `Boot from ISO image`
-  - Click `Browse` and select your `archboot-*.iso`.
+  - Click `Browse` and select the `archboot-...-aarch64.iso` you downloaded earlier.
 - **Storage**
   - Size of drive: `32 GB`
 - **Shared Directory**
