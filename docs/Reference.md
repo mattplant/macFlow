@@ -46,270 +46,97 @@ Key components with context of the `macFlow` Arch Linux installation.
 
 ## Linux Configuration Notes
 
-Key components with context of the `macFlow` Arch Linux configuration.
-
-> **These steps are now automated.** [`ansible/setup.yml`](../ansible/setup.yml) performs
-> everything in this section, and is the source of truth. What follows is kept as
-> background — the *why* behind each choice, and a manual fallback if you are
-> debugging a failed run. Do not treat the commands below as the install procedure.
-
-*Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
+**Source of truth:** [`ansible/setup.yml`](../ansible/setup.yml). This section explains
+*why* each piece exists, not how to run it — the playbook is what actually runs, on both
+install paths. Earlier versions of this file duplicated those commands and drifted out
+of date, so the commands are gone rather than maintained in two places.
 
 ### Package Management (yay)
 
-Install `yay` to simplify and expand package management.
+`yay` wraps `pacman` and adds AUR access.
 
-#### Why `yay`?
+- **Why it is needed:** Desktop Mode pulls VS Code's ARM64 binary and some fonts from
+  the AUR. The *base* configuration does not need it — every package in `setup.yml`
+  comes from `core`/`extra`.
+- **Why it is bootstrapped by hand:** `yay` is itself an AUR package, so it must be
+  built once with `makepkg` before it can install anything.
+- **Why not `makepkg -si`:** `-s` shells out to `sudo` and blocks forever on a password
+  prompt during an unattended build. The playbook installs the build dependencies
+  first, runs `makepkg` as the unprivileged user, then installs the result as root.
 
-- **Access to AUR:** Required for packages not in the official ARM repos (specifically **VS Code ARM64** binaries and proprietary fonts).
-- **Unified Workflow:** `yay` mirrors `pacman` syntax for updates and installation
-- **Automation:** Handles cloning, compiling, and dependency resolution automatically
+### Drivers and Services
 
-#### Pre-requisites
+| Package | Why |
+| :------ | :-- |
+| `mesa` | 3D acceleration for `virtio-gpu` |
+| `linux-aarch64-headers` | building out-of-tree kernel modules |
+| `qemu-guest-agent` | host ↔ guest channel (what `utmctl exec` talks to) |
+| `openssh` | remote access from macOS |
+| `avahi`, `nss-mdns` | `.local` resolution, so `macflow.local` works |
+| `sshfs` | mounting the macOS shared folder |
+| `stow` | dotfile symlink management |
 
-Ensure the core build tools are installed.
+Two subtleties worth knowing:
 
-```bash
-# - base-devel: Required for building AUR packages
-# - git: Required for cloning the yay repository
-sudo pacman -S --needed base-devel git
-```
+- **`nsswitch.conf` ordering matters.** `mdns_minimal [NOTFOUND=return]` must sit after
+  `files myhostname` and before `resolve`/`dns`. Wrong order silently breaks `.local`.
+- **`qemu-guest-agent` is enabled but not always started.** Its unit requires the
+  virtio-serial channel at `/dev/virtio-ports/org.qemu.guest_agent.0`. UTM provides it;
+  a Packer build VM does not. The playbook always enables it and starts it only when
+  the channel exists, so it comes up on the first boot under UTM.
 
-#### Installation
+### Dotfiles (GNU Stow)
 
-We must compile `yay` manually once to bootstrap it.
+Stow symlinks the packages under `dotfiles/` into `$HOME`:
 
-```bash
-# Clone and Build
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
+- `shell` → `.bashrc`, `.bash_profile`
+- `scripts` → utilities in `~/.local/bin/`
+- `foot` → terminal config
+- `hypr` → Hyprland, Waybar, Wofi, Dunst
 
-#  Cleanup
-cd ..
-rm -rf yay
-```
+*Consequence:* those files in `$HOME` are **symlinks into your clone of this repo**.
+Editing `~/.bashrc` edits the repository. Change the file under `dotfiles/` instead,
+then re-run `stow`.
 
-### Install and Configure Drivers
+Stow refuses to link over a real file, so the playbook first moves any pre-existing
+`.bashrc` / `.bash_profile` / `.bash_login` aside to `.bak`.
 
-Since we are running on UTM (QEMU), we need specific drivers for 3D acceleration (`virtio-gpu`), clipboard synchronization (`spice`), and host communication.
+### The File Bridge (SSHFS)
 
-#### Install Packages
+The mount is a shell function rather than an `/etc/fstab` entry, because an fstab mount
+that cannot reach the Mac will hang boot.
 
-```bash
-# - mesa: 3D acceleration (virtio-gpu)
-# - linux-aarch64-headers: Kernel headers for module compilation (ALARM name)
-# qemu-guest-agent: Host communication
-# openssh: Remote access
-# avahi, nss-mdns: Hostname resolution (.local)
-yay -S mesa linux-aarch64-headers qemu-guest-agent openssh avahi nss-mdns
-```
+- `macmount` / `macunmount` / `macstatus` live in
+  [`dotfiles/shell/.bash_profile`](../dotfiles/shell/.bash_profile).
+- The `host` alias in `~/.ssh/config` is written by
+  [`scripts/connect_mac.sh`](../scripts/connect_mac.sh).
+- `user_allow_other` in `/etc/fuse.conf` is what makes the uid/gid mapping work.
 
-#### Enable Services
-
-Ensure background agents start on boot.
-
-```bash
-# Enable QEMU Guest Agent for Host-Guest communication
-sudo systemctl start qemu-guest-agent
-```
-
-### Install and Enable SSH
-
-Install and enable the SSH daemon and Avahi (Bonjour) for simple hostname resolution.
-
-```bash
-# Enable Avahi Daemon (Bonjour) for .local hostname resolution
-sudo systemctl enable --now avahi-daemon
-
-# Configure Name Resolution: To ensure Arch broadcasts its name correctly
-# Edit the config
-sudo nano /etc/nsswitch.conf
-# Find the line: hosts: ...
-# Ensure "mdns_minimal [NOTFOUND=return]" is present before resolve or dns.
-# This is what it was before I modified it:
-# hosts: mymachines resolve [!UNAVAIL=return] files myhostname dns
-# And this is what it should be changed to:
-# hosts: mymachines files myhostname mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] dns
-```
-
-Enable QEMU Guest Agent and SSH Services.
-
-```bash
-sudo systemctl start qemu-guest-agent
-sudo systemctl enable --now sshd
-```
-
-#### Generate your SSH key
-
-Generate a SSH keypair on your the Linux VM using the modern, fast Edwards-curve (ed25519) algorithm. This creates two files in ~/.ssh/ directory:
-
-- **id_ed25519** - Private Key - KEEP SECRET
-- **id_ed25519.pub** - Public Key - Shared with Host
-
-```bash
-ssh-keygen -t ed25519 -C "macflow-vm"
-# (Accept the default location/name so it is used automatically)
-# (Leave passphrase empty for passwordless login)
-```
-
-### Install GNU Stow
-
-Install `stow` to manage dotfiles and configurations.
-
-```bash
-sudo pacman -S stow
-```
-
-### Deploy Configurations (Dotfiles)
-
-We use **GNU Stow** to symlink configuration the **Dot Files** for `macFlow`'s components including:
-
-- Shell profile (`.bashrc`, `.bash_profile`)
-- Utility scripts (into `~/.local/bin/`)
-- Foot (Terminal Emulator)
-- Hyprland (Tiling Window Manager) and its components
-
-*Result:* The config files are now symlinks to the repo. Not only is this a quick way to add new configurations, but it also keeps them version-controlled and easy to update.
-
-### Configure the Guest side of the File Bridge (SSHFS)
-
-#### Setup Passwordless Access (SSH Keys)
-
-For the mount to work automatically, the Linux VM must log in to the Mac without a password prompt.
-
-#### Configure SSH Host Alias
-
-Create a config entry so you can simply refer to your Mac as `host`.
-
-Add the following block to your SSH config (e.g. ```nano ~/.ssh/config```) with your macOS details:
-
-```text
-Host host
-    HostName MyMac.local
-    User matt
-    IdentityFile ~/.ssh/id_ed25519
-```
-
-#### Copy Public Key to macOS
-
-Run this command from your Linux VM to authorize your key. Replace the placeholders with your actual macOS details.
-
-```bash
-ssh-copy-id host
-```
-
-#### Install and Configure the SSH filesystem (SSHFS) driver
-
-Install the driver and perform a manual mount to verify everything is working:
-
-```bash
-sudo pacman -S sshfs
-```
-
-Enable `user_allow_other` option (Required for permission mapping)
-
-```bash
-# Open the FUSE config file
-sudo nano /etc/fuse.conf
-# Uncomment the line: user_allow_other
-```
-
-#### Setup Persistence (The `macmount` Utility)
-
-Instead of hardcoding the mount into startup scripts (which can hang boot if the network is down), we use a resilient shell function. This allows you to mount the drive from Hyprland or TTY.
-
-Add this to your shell profile (`~/.bash_profile`):
-
-```bash
-# --- macFlow: SSHFS Mount Utility ---
-# Usage: Type 'macmount' to connect, 'macunmount' to disconnect
-
-function macmount() {
-    local MOUNT_POINT="$HOME/macFlow-HOST"
-    local REMOTE_PATH="macFlow-SHARE" # Relative to your Mac Home folder
-
-    # 1. Safety Check: Is it already mounted?
-    if mount | grep -q "$MOUNT_POINT"; then
-        echo "⚡ macOS is already mounted at $MOUNT_POINT"
-        return 0
-    fi
-
-    # 2. Ensure mount point exists
-    if [ ! -d "$MOUNT_POINT" ]; then
-        echo "Creating mount point: $MOUNT_POINT"
-        mkdir -p "$MOUNT_POINT"
-    fi
-
-    # 3. Cleanup stale connections (force unmount if stuck)
-    if [ -e "$MOUNT_POINT" ]; then
-        fusermount3 -u "$MOUNT_POINT" 2>/dev/null
-    fi
-
-    # 4. Mount macOS Shared Folder
-    echo "Connecting to macOS Host..."
-    # - Syntax: sshfs [alias]:[remote_path] [local_path] [options]
-    #   - host: The alias we configured in ~/.ssh/config above
-    #   - remote_path: /Users/matt/macFlow-SHARE
-    #   - local_path: ~/macFlow-HOST
-    #   - options:
-    #     - 'allow_other': allows other users (root) to see files
-    #     - 'reconnect': automatically restores connection after sleep/resume
-    #     - `uid=$(id -u),gid=$(id -g)`: ensures the files appear as owned by your linux user
-    sshfs "host:$REMOTE_PATH" "$MOUNT_POINT" -o allow_other,reconnect,uid=$(id -u),gid=$(id -g)
-
-    # 5. Verify result
-    if [ $? -eq 0 ]; then
-        echo "✅ Success: Shared folder mounted."
-    else
-        echo "❌ Error: Could not connect to Host. Check network or SSH config."
-    fi
-}
-
-function macunmount() {
-    fusermount3 -u ~/macFlow-HOST
-    echo "Disconnected from macOS."
-}
-```
+**`~/macFlow-HOST` stays read-only (`0500`) while unmounted.** Left writable it is an
+ordinary directory: files saved there succeed, look completely normal, and never reach
+your Mac. `macmount` opens it to `0700` only long enough to mount. `Permission denied`
+writing there means the share is not mounted — run `macmount`.
 
 ## Hyprland Installation Notes
 
 Key components with context of the `macFlow` Hyprland installation.
 
-### Install Hyprland Related Packages
+### Why These Packages
 
-Install the compositor and the necessary ecosystem tools.
+**Source of truth:** [`scripts/installHyprland.sh`](../scripts/installHyprland.sh).
 
-```bash
-# Core Desktop
-# - hyprland: The engine
-# - xorg-xwayland: Compatibility for non-Wayland apps (VS Code)
-# - qt5-wayland / qt6-wayland: Sharp text for Qt apps
-# - polkit-gnome: Password prompt agent (GTK styling)
-yay -S hyprland xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
-
-# UI Elements
-# - waybar: Status bar (Hyprland has none built-in)
-# - dunst: Notifications
-# - wofi: App Launcher
-# - hyprpaper: Wallpaper utility
-# We include pipewire-jack explicitly to avoid the "jack2 vs pipewire-jack" prompt
-yay -S waybar dunst wofi hyprpaper pipewire-jack
-
-# Terminal & Fonts
-# - foot: CPU-native Wayland terminal (Fastest for VMs)
-# - ttf-jetbrains-mono-nerd: Developer font
-# - ttf-dejavu: UI Fallback font
-yay -S foot ttf-jetbrains-mono-nerd ttf-dejavu
-
-# Host Integration (Clipboard & Resize)
-# - xclip: Clipboard sync
-# - clipnotify: Clipboard watcher
-yay -S xclip clipnotify
-
-# (Optional) Configuration tools to make Qt apps look like GTK apps
-yay -S qt5ct qt6ct
-```
+- `hyprland` + `uwsm` — `uwsm` launches Hyprland as a managed systemd session, which is
+  what the `desktop` alias runs.
+- `xorg-xwayland` — compatibility for X11 apps, including the SPICE agent.
+- `wl-clipboard`, `xclip`, `clipnotify` — the clipboard bridge needs both sides:
+  Wayland (`wl-copy`/`wl-paste`) and X11.
+- `spice-vdagent` — carries the clipboard to and from the Mac.
+- `psmisc` — provides `killall`, used by `start-spice` to reap stale agents.
+- `foot` — CPU-rendered Wayland terminal, the fastest option inside a VM.
+- `pipewire-jack` — included explicitly to avoid an interactive `jack2` vs
+  `pipewire-jack` prompt mid-install.
+- `waybar`, `dunst`, `wofi`, `hyprpaper` — status bar, notifications, launcher,
+  wallpaper. Hyprland ships none of these.
 
 ### The "Brutalist" Hyprland Config
 
