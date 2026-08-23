@@ -19,13 +19,17 @@ log "Step 1: Installing Hyprland and Tools..."
 
 PKGS=(
     # Core Desktop
-    hyprland xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
+    # uwsm launches Hyprland as a managed systemd session (the 'desktop' alias)
+    hyprland uwsm xorg-xwayland qt5-wayland qt6-wayland polkit-gnome
     # UI Elements
     waybar dunst wofi hyprpaper pipewire-jack
     # Terminal & Fonts
     foot ttf-jetbrains-mono-nerd ttf-dejavu
     # Host Integration (Clipboard & X11)
-    xclip clipnotify
+    # spice-vdagent bridges the Mac clipboard; wl-clipboard provides the
+    # wl-copy/wl-paste binaries our clipboard-sync/-export scripts call
+    # psmisc provides 'killall', used by start-spice to reap stale agents
+    xclip clipnotify wl-clipboard spice-vdagent psmisc
     # Theming & Display Tools
     qt5ct qt6ct nwg-look gnome-themes-extra wlr-randr
 )

@@ -36,7 +36,7 @@ fi
 alias ..='cd ..'
 alias ...='cd ../..'
 alias a='alias'
-alias desktop='dbus-run-session Hyprland'
+alias desktop='uwsm start -- Hyprland'
 alias l='ls -CF'
 alias la='ls -A'
 alias ll='ls -alFh'
