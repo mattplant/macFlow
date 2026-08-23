@@ -143,7 +143,7 @@
     # ------------------------------------------------------------------
     # Services
     # ------------------------------------------------------------------
-    - name: Enable and start guest services
+    - name: Enable and start the host-independent services
       ansible.builtin.systemd:
         name: "{{ item }}"
         enabled: true
@@ -151,7 +151,30 @@
       loop:
         - avahi-daemon        # .local advertisement
         - sshd                # remote access from macOS
-        - qemu-guest-agent    # host <-> guest channel
+
+    # The guest agent is different. Its unit requires the virtio-serial channel
+    # the hypervisor exposes at /dev/virtio-ports/org.qemu.guest_agent.0. UTM
+    # provides that channel; the Packer build VM does not, and systemd refuses
+    # to start a unit whose device never appears. Unconditionally starting it
+    # therefore fails every automated build.
+    #
+    # So: always enable it, and only start it when the channel is actually
+    # there. When skipped, it still comes up on the next boot under UTM.
+    - name: Enable the QEMU guest agent
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+
+    - name: Check for the QEMU guest agent channel
+      ansible.builtin.stat:
+        path: /dev/virtio-ports/org.qemu.guest_agent.0
+      register: macflow_qga_channel
+
+    - name: Start the QEMU guest agent when its channel is present
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        state: started
+      when: macflow_qga_channel.stat.exists
 
     # ------------------------------------------------------------------
     # Shared filesystem (guest side)
