@@ -37,8 +37,29 @@ For more details, see [macFlow Reference Context](./docs/Reference.md).
 ### Prerequisites
 
 - **Hardware:** A modern Apple Silicon Mac running macOS.
-- **Storage:** At least 20GB of free drive space (Less required for Headless-only mode).
+- **Storage:** ~35GB free. The VM disk is 32GB, though it is sparse and a fresh install
+  uses far less.
 - **Permissions:** Admin access for Network/Sharing settings.
+
+### Prepare Your Mac First
+
+Do these **before** building the VM. The VM's setup expects them to already be true,
+and `connect_mac.sh` will refuse to continue without them.
+
+1. **Enable Remote Login:** System Settings > General > Sharing > **Remote Login** = ON.
+2. **Create the shared folder** that the VM will mount:
+
+   ```bash
+   mkdir ~/macFlow-SHARE
+   ```
+
+3. **Note your Mac's hostname** — the `.local` one, not the friendly name:
+
+   ```bash
+   scutil --get LocalHostName    # e.g. CSW020  ->  you will enter CSW020.local
+   ```
+
+*See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for the full picture.*
 
 ### Choose a Build Path
 
@@ -58,16 +79,15 @@ The base Arch VM can be built two ways. Everything after it is identical.
   - *See [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md) for detailed steps*
 - **Connect to your Mac:** Run `scripts/connect_mac.sh` to link the VM to your Mac (SSH keys, host alias)
   - *See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for what it sets up*
+- **Set up your tools:** VS Code, git identity, browser and terminal utilities
+  - *See [Development Tools](./docs/Tools/Development.md) — applies to both modes*
 
 ### (Optional) "Desktop" Mode Setup
 
-For the full tiling window manager experience, see:
+For the full tiling window manager experience:
 
-- **Install Tiling WM:** Follow the steps in [Hyprland Install](./docs/WM/Hyprland.md) to set up window manager and related tools.
-
-#### (Optional) Additional "Desktop" Enhancements
-
-- **Configure Development Tools:** Set up VS Code, git, and other tools by following [Development Tools](./docs/Tools/Development.md).
+- **Install Tiling WM:** Follow the steps in [Hyprland Install](./docs/WM/Hyprland.md) to set up the window manager and related tools.
+- **Learn the workflow:** See [macFlow Desktop](./docs/Desktop.md) for keybindings, the "Safety Defusal" shortcuts, and display tuning.
 
 ### Troubleshooting
 
