@@ -68,8 +68,13 @@ answer file (Archboot has no unattended mode):
    gets us to a plain root shell.
 3. `curl`s [`scripts/install_base.sh`](./scripts/install_base.sh) from Packer's built-in
    HTTP server (reachable from the guest at `10.0.2.2`) and runs it.
-4. `install_base.sh` partitions `/dev/vda`, runs `pacstrap`, configures the system in
-   `arch-chroot`, installs systemd-boot, and reboots.
+4. `install_base.sh` partitions `/dev/vda`, **refreshes the package database**, runs
+   `pacstrap`, configures the system in `arch-chroot`, installs systemd-boot, and
+   reboots.
+
+   The database refresh is not optional. The ISO carries a snapshot from its build
+   date while mirrors keep only current versions, so without it `pacstrap` requests
+   stale versions and fails with a 404 on the first package rebuilt since.
 5. Packer reconnects over SSH as `root`, installs Ansible in the guest, and applies [`ansible/setup.yml`](../ansible/setup.yml).
 6. The guest is halted cleanly via `shutdown_command`.
 

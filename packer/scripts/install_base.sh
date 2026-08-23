@@ -23,6 +23,19 @@ mkdir -p /mnt/boot
 # Mount the EFI partition
 mount /dev/vda1 /mnt/boot
 
+# Refresh the package database before installing anything.
+#
+# The Archboot ISO ships a package database snapshot from the day it was built,
+# but mirrors only carry CURRENT package versions. Without this refresh pacstrap
+# asks for the versions the snapshot recorded and 404s on anything rebuilt
+# since -- which is guaranteed to happen, because we deliberately pin the ISO to
+# a completed month for URL stability. This is the trade that makes that safe.
+pacman -Sy --noconfirm
+
+# Signing keys rotate too, and a stale keyring makes good packages look corrupt.
+# Tolerated if it fails: an out-of-date keyring is not always fatal.
+pacman -S --noconfirm --needed archlinuxarm-keyring || true
+
 # Install Base System
 pacstrap /mnt base linux-aarch64 linux-firmware \
     mkinitcpio iptables-nft polkit btrfs-progs dosfstools terminus-font \
