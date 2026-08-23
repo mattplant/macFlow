@@ -48,6 +48,11 @@ Key components with context of the `macFlow` Arch Linux installation.
 
 Key components with context of the `macFlow` Arch Linux configuration.
 
+> **These steps are now automated.** [`ansible/setup.yml`](../ansible/setup.yml) performs
+> everything in this section, and is the source of truth. What follows is kept as
+> background — the *why* behind each choice, and a manual fallback if you are
+> debugging a failed run. Do not treat the commands below as the install procedure.
+
 *Note:* Do not run makepkg as root. Run these commands as your standard user (macflow).
 
 ### Package Management (yay)
@@ -382,8 +387,9 @@ macFlow/
 │   ├── Headless.md     # Headless Mode documentation
 │   ├── Reference.md    # Design philosophy and reference
 │   └── Tips.md         # Tips & Tricks
+├── ansible/            # IaC: setup.yml, the guest configuration playbook
 ├── dotfiles/           # Source configuration files (Stow targets)
-├── packer/             # IaC: Packer template for automated base image builds
+├── packer/             # IaC: Packer template for automated image builds
 ├── scripts/            # Installation and setup scripts
 ├── LICENSE             # Source Code License (MIT)
 ├── LICENSE-DOCS.md     # Documentation License (CC BY 4.0)

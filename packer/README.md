@@ -1,18 +1,24 @@
-# macFlow: Automated Base Image (Packer)
+# macFlow: Automated Image Build (Packer + Ansible)
 
-Infrastructure as Code for `macFlow`. This builds a bootable Arch Linux ARM64 base image without stepping through the Archboot installer by hand.
+Infrastructure as Code for `macFlow`. This builds a configured, bootable Arch Linux ARM64 image without stepping through the Archboot installer by hand.
 
 ## Strategy
 
 The manual path in [Arch Linux Install](../docs/Guest-OS/Arch-Install.md) is roughly twenty minutes of menu navigation, and every rebuild repeats it. Packer replaces that with one command.
 
-What Packer does **not** do is build the whole environment. It produces a *base image* only — a minimal, bootable Arch system with networking and SSH. The existing scripts still run on top of it:
+The build runs in two stages, and produces an image that is already configured:
 
 | Stage | Tool | Result |
 | :---- | :--- | :----- |
-| Base OS | `packer build` (this directory) | Bootable Arch ARM64, SSH, NetworkManager |
-| Configuration | [`scripts/configArch.sh`](../scripts/configArch.sh) | yay, drivers, dotfiles, SSHFS bridge |
-| Desktop *(optional)* | [`scripts/installHyprland.sh`](../scripts/installHyprland.sh) | Hyprland, Waybar, clipboard integration |
+| Base OS | [`scripts/install_base.sh`](./scripts/install_base.sh) | Bootable Arch ARM64, SSH, NetworkManager |
+| Configuration | [`ansible/setup.yml`](../ansible/setup.yml) | yay, drivers, services, dotfiles, SSHFS bridge |
+
+Two things are deliberately left out, because each needs a human:
+
+| Step | Tool | Why it is not in the build |
+| :--- | :--- | :------------------------- |
+| Link the VM to your Mac | [`scripts/connect_mac.sh`](../scripts/connect_mac.sh) | Needs your Mac's hostname, username, and password |
+| Desktop Mode *(optional)* | [`scripts/installHyprland.sh`](../scripts/installHyprland.sh) | Not everyone wants a GUI |
 
 ## Prerequisites
 
@@ -25,6 +31,9 @@ brew install packer qemu
 - **Disk:** ~35 GB free. The image is a 32 GB sparse qcow2, so real usage is far lower, but leave headroom.
 - **Time:** Expect a full `pacstrap` download on every build — there is no local package cache.
 
+> *Note:* Ansible is **not** required on macOS. The build uses the `ansible-local`
+> provisioner, which installs and runs Ansible inside the guest.
+
 > *Note:* The template hardcodes the Homebrew firmware paths
 > (`/opt/homebrew/share/qemu/edk2-aarch64-code.fd` and `edk2-arm-vars.fd`).
 > If QEMU is installed elsewhere, update `efi_firmware_code` / `efi_firmware_vars`
@@ -35,8 +44,12 @@ brew install packer qemu
 ```bash
 cd packer
 
-# Download the QEMU plugin declared in the template (once per machine)
+# Download the QEMU and Ansible plugins declared in the template
+# (once per machine)
 packer init macflow.pkr.hcl
+
+# Packer refuses to start if the output directory already exists.
+rm -rf build_output
 
 # Build. A QEMU window opens so you can watch the install happen.
 packer build macflow.pkr.hcl
@@ -57,11 +70,37 @@ answer file (Archboot has no unattended mode):
    HTTP server (reachable from the guest at `10.0.2.2`) and runs it.
 4. `install_base.sh` partitions `/dev/vda`, runs `pacstrap`, configures the system in
    `arch-chroot`, installs systemd-boot, and reboots.
-5. Packer reconnects over SSH as `root` to confirm the system came up, then shuts down.
+5. Packer reconnects over SSH as `root`, installs Ansible in the guest, and applies [`ansible/setup.yml`](../ansible/setup.yml).
+6. The guest is halted cleanly via `shutdown_command`.
 
 Because step 2 depends on typing into a live console, the boot command is timing
 sensitive. If the build hangs, watch the QEMU window and adjust the `<wait…>` values
 in the `boot_command` block.
+
+## Provisioning (Ansible)
+
+[`ansible/setup.yml`](../ansible/setup.yml) is the single source of truth for guest
+configuration — packages, `yay`, mDNS, services, FUSE, SSH keys, and Stow dotfiles.
+
+It runs in exactly one way, in both install paths: **inside the guest, against
+localhost**.
+
+```text
+ansible/setup.yml
+   |
+   +-- Packer build : provisioner "ansible-local"   (packer/macflow.pkr.hcl)
+   +-- Manual build : ansible-playbook -c local     (scripts/configArch.sh)
+```
+
+Using `ansible-local` rather than the remote `ansible` provisioner is deliberate.
+The remote provisioner would run Ansible on macOS and reach into the guest over an
+SSH proxy — a second execution model, with its own prerequisites and failure modes,
+for the same playbook. Keeping everything guest-side means one model, and nothing
+extra to install on the host.
+
+To re-apply the playbook later — after editing dotfiles, say — just run
+`scripts/configArch.sh` again. Ansible is idempotent, which the shell script it
+replaced was not.
 
 ## Using the image
 
@@ -71,8 +110,13 @@ The qcow2 is a raw disk, not a UTM bundle. Create a VM in UTM as described in
 as a VirtIO drive). Apply the same display and network settings the manual path
 uses — those are properties of the VM, not of the image.
 
-First login uses the credentials baked in below. Change them, then continue with
-[Arch Linux Configuration](../docs/Guest-OS/Arch-Configure.md).
+First login uses the credentials baked in below — change them. The system is
+already configured at this point, so the only remaining step is the handshake
+with your Mac:
+
+```bash
+~/macFlow/scripts/connect_mac.sh
+```
 
 ## ⚠️ This image ships with known credentials
 
@@ -86,8 +130,10 @@ First login uses the credentials baked in below. Change them, then continue with
 It also appends `PermitRootLogin yes` to `/etc/ssh/sshd_config`.
 
 **Treat the output as a scratch image on a trusted network.** Change both passwords
-and revert `PermitRootLogin` before putting the VM anywhere else. Hardening this
-properly is what the (currently unused) Ansible provisioner is intended for.
+and revert `PermitRootLogin` before putting the VM anywhere else.
+
+`scripts/connect_mac.sh` offers to regenerate this VM's SSH *host* keys, which are
+otherwise identical in every VM built from the same image. Say yes on a fresh image.
 
 ## Divergences from the manual install
 
@@ -123,9 +169,8 @@ that matters to you.
 
 ### Known gaps
 
-- **The Ansible plugin is declared but unused.** [`macflow.pkr.hcl`](./macflow.pkr.hcl)
-  requires the plugin and the build has no `provisioner` blocks, so configuration
-  still happens through the shell scripts. Wiring up Ansible — starting with
-  credential cleanup — is the natural next step for #15.
-- **No cleanup provisioner.** See the credentials warning above.
+- **No cleanup provisioner**, so the build credentials survive into the image. See
+  the warning above. This is the obvious next Ansible task.
 - **No local package mirror**, so every build re-downloads the base system.
+- **`pacman -Sy` before installing Ansible** is a partial-upgrade pattern. It is safe
+  here only because `pacstrap` ran moments earlier against the same mirror state.

@@ -56,8 +56,8 @@ The base Arch VM can be built two ways. Everything after it is identical.
   - *See [Arch Linux Install](./docs/Guest-OS/Arch-Install.md) for detailed steps*
 - **Configure Arch:** Set up networking, users, and essential packages
   - *See [Arch Linux Configuration](./docs/Guest-OS/Arch-Configure.md) for detailed steps*
-- **macFlow Integration:** Set up the integration bridge (Files, Clipboard, Identity)
-  - *See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for detailed steps*
+- **Connect to your Mac:** Run `scripts/connect_mac.sh` to link the VM to your Mac (SSH keys, host alias)
+  - *See [macFlow Integration](./docs/Integration/macFlow-Integration.md) for what it sets up*
 
 ### (Optional) "Desktop" Mode Setup
 

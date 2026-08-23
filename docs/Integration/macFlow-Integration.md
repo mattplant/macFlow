@@ -107,7 +107,10 @@ We use SSHFS to mount the macOS folder (~/macFlow-SHARE) inside the Linux VM.
 
 ### Guest Configuration
 
-*Note:* This is handled automatically by the configArch.sh script during installation.
+*Note:* The guest side is handled automatically. [`ansible/setup.yml`](../../ansible/setup.yml)
+installs `sshfs`, enables `user_allow_other` in `/etc/fuse.conf`, and creates the
+`~/macFlow-HOST` mount point. [`scripts/connect_mac.sh`](../../scripts/connect_mac.sh)
+then writes the `host` SSH alias and authorizes this VM on your Mac.
 
 ### Usage
 

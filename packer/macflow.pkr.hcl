@@ -105,5 +105,25 @@ source "qemu" "arch_arm" {
 build {
   sources = ["source.qemu.arch_arm"]
 
+  # --- Provisioning ---
+  # We use "ansible-local" rather than the remote "ansible" provisioner, so the
+  # playbook runs *inside* the guest against localhost. That is exactly how
+  # scripts/configArch.sh applies it on the manual install path, which means
+  # both paths share one execution model -- and macOS needs no Ansible install.
+
+  provisioner "shell" {
+    inline = [
+      "echo '--- Installing Ansible in the guest ---'",
+      # Pulls in Python as a dependency, which Ansible needs anyway.
+      "pacman -Sy --noconfirm ansible",
+    ]
+  }
+
+  provisioner "ansible-local" {
+    # Resolved relative to this template's directory (packer/).
+    playbook_file   = "../ansible/setup.yml"
+    extra_arguments = ["--extra-vars", "macflow_user=macflow"]
+  }
+
   # Post-Processors (Cleanup) can go here later
 }

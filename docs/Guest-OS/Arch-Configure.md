@@ -46,8 +46,36 @@ git clone https://github.com/mattplant/macFlow.git
 
 ## Execute Script to Configure Arch Linux
 
-Run the `macFlow` Arch Linux configuration script to automate the setup of drivers, packages, and services.
+Run the `macFlow` configuration script. It installs Ansible, then applies
+[`ansible/setup.yml`](../../ansible/setup.yml) to this machine — drivers, packages,
+services, and dotfiles.
 
 ```bash
 ~/macFlow/scripts/configArch.sh
 ```
+
+*Note:* The playbook is the same one the [Packer build](../../packer/README.md)
+applies, so both install paths end up with an identical system. It is idempotent —
+re-run this script any time to re-apply the configuration.
+
+## Connect This VM to Your Mac
+
+Everything above is unattended. Linking the VM to your Mac needs your input
+(hostname, username, password), so it is a separate step:
+
+```bash
+~/macFlow/scripts/connect_mac.sh
+```
+
+This regenerates the VM's SSH host keys, writes the `host` alias to `~/.ssh/config`,
+and authorizes this VM on your Mac.
+
+*Before running it*, make sure on macOS that **Remote Login** is ON
+(System Settings > General > Sharing) and that the shared folder exists:
+
+```bash
+# On your Mac
+mkdir ~/macFlow-SHARE
+```
+
+For the full picture, see [macFlow Integration](../Integration/macFlow-Integration.md).
