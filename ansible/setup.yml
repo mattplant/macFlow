@@ -27,10 +27,11 @@
     macflow_repo: https://github.com/mattplant/macFlow.git
     macflow_repo_dir: "/home/{{ macflow_user }}/macFlow"
 
-    # Kernel headers are only needed for out-of-tree module builds. The package
-    # name differs between stock Arch (linux-headers) and Arch Linux ARM
-    # (linux-aarch64-headers) -- see README notes before changing this.
-    kernel_headers_package: linux-headers
+    # Kernel headers for out-of-tree module builds. Arch Linux ARM ships these
+    # as linux-aarch64-headers, matching its linux-aarch64 kernel; plain
+    # "linux-headers" does not exist in the ALARM repos at all. Override this
+    # only if you are running a different kernel package.
+    kernel_headers_package: linux-aarch64-headers
 
     # Stow packages under dotfiles/, deployed into the user's home directory.
     stow_packages:
