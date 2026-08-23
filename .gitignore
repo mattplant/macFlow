@@ -6,6 +6,7 @@ packer_cache/
 *.qcow2
 *.fd
 crash.log
+packer/*.log
 
 # Editor / OS cruft
 .DS_Store

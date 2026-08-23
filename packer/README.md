@@ -115,6 +115,14 @@ The qcow2 is a raw disk, not a UTM bundle. Create a VM in UTM as described in
 as a VirtIO drive). Apply the same display and network settings the manual path
 uses — those are properties of the VM, not of the image.
 
+Two things to know when importing by hand:
+
+- **Clear the EFI variables.** If you reuse an existing VM bundle as a shell, its
+  `Data/efi_vars.fd` may still point at the old install's bootloader. Delete it and
+  let UTM regenerate; this image boots via systemd-boot at the removable-media path.
+- **Give the VM a fresh MAC address.** UTM does not regenerate it when you clone a
+  bundle, and two VMs sharing a MAC cannot run on the same network at once.
+
 First login uses the credentials baked in below — change them. The system is
 already configured at this point, so the only remaining step is the handshake
 with your Mac:
@@ -187,6 +195,9 @@ that matters to you.
 - **No cleanup provisioner**, so the build credentials survive into the image. See
   the warning above. This is the obvious next Ansible task.
 - **No local package mirror**, so every build re-downloads the base system.
+- **The image ships with the repo checked out at `main`.** `ansible/setup.yml` clones
+  `version: main`, so a freshly built VM does not have whatever branch you built it
+  from. Check out the branch you want inside the VM after first boot.
 - **Every build performs a full `pacman -Syu`** before installing Ansible. Arch does
   not support partial upgrades: `-Sy` followed by an install pulls newer libraries
   that file-conflict with the older ones on disk. Verified the hard way on a
