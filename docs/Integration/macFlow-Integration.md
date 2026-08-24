@@ -8,10 +8,17 @@ For seamless development flow, we need a shared workspace between macOS and the 
 - **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
 - **Identity:** Git credentials are passed via **SSH Agent Forwarding**
 
-This integration requires connectivity in two directions:
+This integration requires connectivity in two directions. They are separate, and each
+needs its own key — being authorized in one direction does not authorize the other.
 
-1. **Control Plane (macOS -> Linux):** Using SSH to access the VM terminal.
-2. **Data Plane (Linux -> macOS):** The VM mounting macOS files via SSHFS.
+| | Direction | Purpose | Set up by |
+| :-- | :-------- | :------ | :-------- |
+| **Control Plane** | macOS → Linux | SSH into the VM, VS Code Remote | **You**, Part 2 below |
+| **Data Plane** | Linux → macOS | The VM mounting your files over SSHFS | **`connect_mac.sh`**, run inside the VM |
+
+So Part 2 is manual and Part 3 is automated. If you have already run
+[`connect_mac.sh`](../../scripts/connect_mac.sh), the guest side is done and you only
+need Part 1 and Part 2 here.
 
 ## Part 1: Host Configuration (macOS)
 
@@ -107,13 +114,55 @@ We use SSHFS to mount the macOS folder (~/macFlow-SHARE) inside the Linux VM.
 
 ### Guest Configuration
 
-*Note:* This is handled automatically by the configArch.sh script during installation.
+*Note:* The guest side is handled automatically. [`ansible/setup.yml`](../../ansible/setup.yml)
+installs `sshfs`, enables `user_allow_other` in `/etc/fuse.conf`, and creates the
+`~/macFlow-HOST` mount point. [`scripts/connect_mac.sh`](../../scripts/connect_mac.sh)
+then writes the `host` SSH alias and authorizes this VM on your Mac.
 
 ### Usage
 
-From inside the Linux VM (or via SSH), use the aliases:
+From inside the Linux VM (or via SSH), use these shell functions:
 
 - Connect: `macmount`
-  - Mounts macOS ~/macFlow-SHARE to Linux ~/macFlow-HOST.
+  - Mounts macOS `~/macFlow-SHARE` to Linux `~/macFlow-HOST`.
 - Disconnect: `macunmount`
   - Unmounts the shared folder from the Linux VM.
+- Check: `macstatus`
+  - Reports whether the share is currently mounted.
+
+> *Why the two names differ:* `macFlow-SHARE` is the folder you share **out** from
+> macOS; `macFlow-HOST` is where **the host's** files appear inside the VM. Same
+> directory, named for whichever side you are standing on.
+
+### Troubleshooting: "user has no write access to mountpoint"
+
+```
+fusermount3: user has no write access to mountpoint /home/macflow/macFlow-HOST
+```
+
+Your shell has a **stale `macmount`**. The mount point is kept at `0500` and `macmount`
+opens it to `0700` only while mounting — an older copy of the function does not do
+that, so it cannot mount its own mount point. This happens after pulling a newer
+revision, or in a shell that started before the dotfiles were updated.
+
+Reload the profile (or log out and back in):
+
+```bash
+source ~/.bash_profile
+macstatus     # should now exist
+macmount
+```
+
+If `macstatus: command not found`, that confirms it — the running shell predates the
+current dotfiles.
+
+### The mount point is read-only when unmounted
+
+`~/macFlow-HOST` is deliberately kept at mode `0500` while nothing is mounted, and
+`macmount` opens it only long enough to mount.
+
+Without that, an unmounted `~/macFlow-HOST` is an ordinary writable directory:
+files you save there succeed, look completely normal, and never reach your Mac —
+then vanish from view the next time you mount over them. If you see
+`Permission denied` writing to `~/macFlow-HOST`, that is the guard telling you the
+share is not mounted. Run `macmount`.

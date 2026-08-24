@@ -1,0 +1,289 @@
+---
+# macFlow: Arch Linux guest configuration
+#
+# This playbook is the single source of truth for configuring the VM. It runs
+# in two places, both of them *inside the guest*:
+#
+#   - Packer build   : provisioner "ansible-local" (see packer/macflow.pkr.hcl)
+#   - Manual install : scripts/configArch.sh
+#
+# Everything here is non-interactive. The parts that need to talk to your Mac
+# (hostname, username, ssh-copy-id) live in scripts/connect_mac.sh instead.
+#
+# Linting (on macOS, where Homebrew keeps ansible-lint and the collections in
+# separate formulae, so lint cannot see community.general by default):
+#
+#   COLL=$(ls -d /opt/homebrew/opt/ansible/libexec/lib/python*/site-packages)
+#   ANSIBLE_COLLECTIONS_PATH="$COLL" ansible-lint ansible/setup.yml
+
+- name: Configure the macFlow Arch Linux guest
+  hosts: all
+  become: true
+
+  vars:
+    # Overridden by configArch.sh so the playbook also works for a user who
+    # named their account something other than "macflow".
+    macflow_user: macflow
+    macflow_repo: https://github.com/mattplant/macFlow.git
+    macflow_repo_dir: "/home/{{ macflow_user }}/macFlow"
+
+    # Kernel headers for out-of-tree module builds. Arch Linux ARM ships these
+    # as linux-aarch64-headers, matching its linux-aarch64 kernel; plain
+    # "linux-headers" does not exist in the ALARM repos at all. Override this
+    # only if you are running a different kernel package.
+    kernel_headers_package: linux-aarch64-headers
+
+    # Stow packages under dotfiles/, deployed into the user's home directory.
+    stow_packages:
+      - shell    # .bashrc, .bash_profile
+      - scripts  # ~/.local/bin utilities
+      - foot     # Foot terminal
+      - hypr     # Hyprland, Waybar, Wofi, Dunst
+
+    # Files stow needs to own, but which Arch may have created as real files.
+    shell_dotfiles:
+      - .bashrc
+      - .bash_profile
+      - .bash_login
+
+  handlers:
+    - name: Restart avahi-daemon
+      ansible.builtin.systemd:
+        name: avahi-daemon
+        state: restarted
+
+  tasks:
+    # ------------------------------------------------------------------
+    # Packages
+    # ------------------------------------------------------------------
+    # Every package below is in the official repos (core/extra), so plain
+    # pacman is enough. yay is bootstrapped separately, for AUR packages the
+    # Desktop Mode install needs later.
+    - name: Install base system packages
+      community.general.pacman:
+        name:
+          - base-devel          # required to build AUR packages
+          - git                 # cloning this repo and the yay PKGBUILD
+          - go                  # build dependency of yay
+          - mesa                # 3D acceleration for virtio-gpu
+          - "{{ kernel_headers_package }}"
+          - qemu-guest-agent    # host <-> guest communication
+          - openssh             # remote access
+          - avahi               # .local hostname resolution (Bonjour)
+          - nss-mdns            # glibc resolver plugin for avahi
+          - sshfs               # mounting the macOS shared folder
+          - stow                # dotfile symlink management
+        state: present
+        update_cache: true
+
+    # ------------------------------------------------------------------
+    # AUR helper (yay)
+    # ------------------------------------------------------------------
+    # makepkg refuses to run as root, and `makepkg -si` would call sudo and
+    # block on a password prompt during an unattended build. So we build as the
+    # unprivileged user without -s (deps are already installed above) and let
+    # root install the resulting package.
+    - name: Check whether yay is already installed
+      ansible.builtin.stat:
+        path: /usr/bin/yay
+      register: yay_binary
+
+    - name: Bootstrap yay from the AUR
+      when: not yay_binary.stat.exists
+      block:
+        - name: Clone the yay PKGBUILD
+          ansible.builtin.git:
+            repo: https://aur.archlinux.org/yay.git
+            dest: /tmp/yay
+            version: master
+          become: true
+          become_user: "{{ macflow_user }}"
+
+        - name: Build the yay package
+          ansible.builtin.command:
+            cmd: makepkg --noconfirm --clean
+            chdir: /tmp/yay
+          become: true
+          become_user: "{{ macflow_user }}"
+          changed_when: true
+
+        - name: Find the built package
+          ansible.builtin.find:
+            paths: /tmp/yay
+            patterns: "yay-*.pkg.tar.*"
+          register: yay_package
+
+        - name: Install yay
+          community.general.pacman:
+            name: "{{ yay_package.files | map(attribute='path') | list }}"
+            state: present
+
+      always:
+        - name: Remove the yay build directory
+          ansible.builtin.file:
+            path: /tmp/yay
+            state: absent
+
+    # ------------------------------------------------------------------
+    # Hostname resolution (.local)
+    # ------------------------------------------------------------------
+    # mdns_minimal must appear before resolve/dns so avahi answers .local
+    # lookups. Declaring the whole line keeps this idempotent, unlike the sed
+    # substitution it replaces.
+    - name: Enable mDNS resolution in nsswitch.conf
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^hosts:'
+        line: >-
+          hosts: mymachines files myhostname mdns_minimal [NOTFOUND=return]
+          resolve [!UNAVAIL=return] dns
+        backup: true
+      notify: Restart avahi-daemon
+
+    # ------------------------------------------------------------------
+    # Services
+    # ------------------------------------------------------------------
+    - name: Enable and start the host-independent services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop:
+        - avahi-daemon        # .local advertisement
+        - sshd                # remote access from macOS
+
+    # The guest agent is different. Its unit requires the virtio-serial channel
+    # the hypervisor exposes at /dev/virtio-ports/org.qemu.guest_agent.0. UTM
+    # provides that channel; the Packer build VM does not, and systemd refuses
+    # to start a unit whose device never appears. Unconditionally starting it
+    # therefore fails every automated build.
+    #
+    # So: always enable it, and only start it when the channel is actually
+    # there. When skipped, it still comes up on the next boot under UTM.
+    - name: Enable the QEMU guest agent
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+
+    - name: Check for the QEMU guest agent channel
+      ansible.builtin.stat:
+        path: /dev/virtio-ports/org.qemu.guest_agent.0
+      register: macflow_qga_channel
+
+    - name: Start the QEMU guest agent when its channel is present
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        state: started
+      when: macflow_qga_channel.stat.exists
+
+    # ------------------------------------------------------------------
+    # Shared filesystem (guest side)
+    # ------------------------------------------------------------------
+    # allow_other lets the mount be visible to root as well as the owning user,
+    # which SSHFS needs for the uid/gid mapping to behave.
+    - name: Allow non-root users to share FUSE mounts
+      ansible.builtin.lineinfile:
+        path: /etc/fuse.conf
+        regexp: '^#?\s*user_allow_other'
+        line: user_allow_other
+
+    # The mount point stays read-only while nothing is mounted. A writable
+    # directory here silently swallows files that never reach the Mac; macmount
+    # opens it to 0700 only long enough to mount.
+    #
+    # Skipped while a mount is live -- otherwise the file module would apply
+    # this mode straight through the mount, onto the Mac's shared folder.
+    - name: Check whether the macOS share is currently mounted
+      ansible.builtin.command:
+        cmd: mountpoint -q /home/{{ macflow_user }}/macFlow-HOST
+      register: macflow_mountpoint
+      changed_when: false
+      failed_when: false
+
+    - name: Create the macOS mount point (read-only while unmounted)
+      ansible.builtin.file:
+        path: "/home/{{ macflow_user }}/macFlow-HOST"
+        state: directory
+        owner: "{{ macflow_user }}"
+        group: "{{ macflow_user }}"
+        mode: "0500"
+      when: macflow_mountpoint.rc != 0
+
+    # ------------------------------------------------------------------
+    # User SSH identity
+    # ------------------------------------------------------------------
+    # Created without a passphrase so the SSHFS mount can run unattended. This
+    # is the key connect_mac.sh pushes to your Mac.
+    - name: Generate the user SSH keypair
+      ansible.builtin.command:
+        cmd: >-
+          ssh-keygen -t ed25519 -C "{{ macflow_user }}@macflow"
+          -f /home/{{ macflow_user }}/.ssh/id_ed25519 -N ""
+        creates: "/home/{{ macflow_user }}/.ssh/id_ed25519"
+      become: true
+      become_user: "{{ macflow_user }}"
+
+    # ------------------------------------------------------------------
+    # Dotfiles
+    # ------------------------------------------------------------------
+    - name: Clone the macFlow repository
+      ansible.builtin.git:
+        repo: "{{ macflow_repo }}"
+        dest: "{{ macflow_repo_dir }}"
+        version: main
+        # Never clobber local edits -- on the manual path the user already
+        # cloned this repo and may be working in it.
+        update: false
+      become: true
+      become_user: "{{ macflow_user }}"
+
+    - name: Check for pre-existing shell dotfiles
+      ansible.builtin.stat:
+        path: "/home/{{ macflow_user }}/{{ item }}"
+      loop: "{{ shell_dotfiles }}"
+      register: existing_dotfiles
+
+    # Stow refuses to link over a real file. Anything that is a regular file
+    # (not already one of our symlinks) gets moved aside first.
+    - name: Back up shell dotfiles that would block stow
+      ansible.builtin.command:
+        cmd: >-
+          mv /home/{{ macflow_user }}/{{ item.item }}
+          /home/{{ macflow_user }}/{{ item.item }}.bak
+        removes: "/home/{{ macflow_user }}/{{ item.item }}"
+      loop: "{{ existing_dotfiles.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - item.stat.exists
+        - item.stat.isreg
+      become: true
+      become_user: "{{ macflow_user }}"
+
+    - name: Ensure the XDG config directory exists
+      ansible.builtin.file:
+        path: "/home/{{ macflow_user }}/.config"
+        state: directory
+        owner: "{{ macflow_user }}"
+        group: "{{ macflow_user }}"
+        mode: "0755"
+
+    - name: Deploy dotfiles with stow
+      ansible.builtin.command:
+        cmd: "stow --restow --target /home/{{ macflow_user }} {{ item }}"
+        chdir: "{{ macflow_repo_dir }}/dotfiles"
+      loop: "{{ stow_packages }}"
+      become: true
+      become_user: "{{ macflow_user }}"
+      register: stow_result
+      changed_when: stow_result.stderr | length > 0
+
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+    - name: Report next steps
+      ansible.builtin.debug:
+        msg:
+          - "macFlow guest configuration complete."
+          - "Next: run scripts/connect_mac.sh to link this VM to your Mac."
+          - "Desktop Mode (optional): run scripts/installHyprland.sh."

@@ -30,7 +30,8 @@ To ensure a seamless flow, `macFlow` uses standard protocols to bypass driver li
 
 - **Files:** Files are shared via **SSHFS**
 - **Input:** Capture Input mode for keyboard/mouse focus
-- **Clipboard:** Copy/Paste is handled via **SPICE**
+- **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or your **terminal emulator** (Headless Mode).
+- **Identity:** Git credentials are passed via **SSH Agent Forwarding**.
 
 For details, see [macFlow: File Integration](./Integration/macFlow-Integration.md).
 
@@ -58,7 +59,8 @@ By default, macOS intercepts many critical shortcuts (like `Cmd+Q` to quit) befo
 
 ## Setting for Multiple Monitors
 
-In your Hyprland config (`~/.config/hypr/hyprland.conf`) set it to your largest resolution.
+Set your largest resolution in `~/.config/hypr/conf/monitors.conf`. (`hyprland.conf` only
+`source`s the files under `conf/` — the monitor line is not in it.)
 
 ```bash
 monitor = , 3840x2160, auto, 2
@@ -159,7 +161,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 
 #### Display Configuration (Troubleshooting & Fine-Tuning)
 
-Switch to using dynamic scaling in your Hyprland config (`~/.config/hypr/hyprland.conf`) file
+Switch to dynamic scaling in `~/.config/hypr/conf/monitors.conf`
 
 ```bash
 # 1. Display: Dynamic Resizing (The UTM Advantage)

@@ -42,11 +42,11 @@ From the **Setup Menu**, select **`Install Packages`**
 - Confirm installation of these required packages for minimum system by selecting `Yes`
   - `base` - core OS
   - `iptables-nft` - firewall utilities
-  - `linux` - Linux kernel
+  - `linux-aarch64` - Linux kernel (Arch Linux ARM's aarch64 kernel)
   - `polkit` - privilege management
   - `btrfs-progs` - BTRFS filesystem tools
   - `dosfstools` - DOS filesystem utilities
-  - `terminal-fonts` - console fonts
+  - `terminus-font` - console fonts
 
 ### Configuration
 
@@ -56,25 +56,22 @@ From the **Setup Menu**, select **`Configure System`**
 - **Default Editor:** Select `Nano` (easy for beginners) or `NEOVIM` (experts)
   - **Note:** In this guide, we will use `Nano` to edit files to keep things simple and accessible.
 - **Init System:** Select `SYSTEMD`
-- From the **System Configuration** menu:
-  - From the **User Management** menu:
-    - **Default Shell:** Select `bash`
-    - **Create User Account**, enter `macflow`
-      - Select `Enable macflow as Admistrator and part of wheel group`
-      - For comment, enter `macFlow is awesome` or your full name :)
-      - Enter and confirm user password
-      - Return to `System Configuration`
-  - Go thru all the other **System Configuration** options and accept defaults except where called out below:
-    - Set **System Hostname** to `macflow`
-    - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
-    - Return to `Main Menu`
-      - Select `Return to System Configuration`
-    - Go thru each `System Configuration` option and accept defaults except where called out below:
-      - For **Kernel Modules** add these: `virtio virtio_pci virtio_blk virtio_net virtio_gpu virtio_balloon virtio_console`
-        - *Why?* These modules provide optimal performance and compatibility with UTM's virtualized hardware.
-      - Set **System Hostname** to `macflow`
-      - For **Network Hosts** (/etc/hosts) add this entry to bottom `127.0.0.1        macflow.localdomain macflow`
-      - Return to `Main Menu`
+
+From the **System Configuration** menu, work through each option. Accept the defaults
+except for the four below, then return to the **Main Menu**.
+
+- **User Management**
+  - **Default Shell:** `bash`
+  - **Create User Account:** `macflow`
+    - Select *Enable macflow as Administrator and part of wheel group*
+    - Comment: your full name (or `macFlow is awesome`)
+    - Enter and confirm the user password
+- **Kernel Modules** — add:
+  `virtio virtio_pci virtio_blk virtio_net virtio_gpu virtio_balloon virtio_console`
+  - *Why?* These give the best performance and compatibility with UTM's virtual hardware.
+- **System Hostname:** `macflow`
+- **Network Hosts** (`/etc/hosts`) — add to the bottom:
+  `127.0.0.1        macflow.localdomain macflow`
 
 ### Install Bootloader
 
@@ -85,7 +82,7 @@ From the **Setup Menu**, select **`Configure System`**
 ### Finish Installation
 
 - From the **Setup Menu**, select **`Exit` > `Poweroff System`
-  - *Why?* This provides a clean stop, allowing you to eject the ISO from VMware settings so your first boot actually goes to your new Arch Linux hard drive.`
+  - *Why?* This provides a clean stop, allowing you to eject the ISO from UTM's settings so your first boot goes to your new Arch Linux hard drive.
 - Prevent the VM from booting back into the Archboot ISO:
   - On the `macFlow` VM in UTM, clear the image from the `CD/DVD`.
 

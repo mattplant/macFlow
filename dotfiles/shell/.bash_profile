@@ -39,50 +39,88 @@ elif [[ -z "$WAYLAND_DISPLAY" && -z "$DISPLAY" ]]; then
 fi
 
 # --- macFlow: SSHFS Mount Utility ---
-# Usage: Type 'macmount' to connect, 'macunmount' to disconnect
+# Usage: 'macmount' to connect, 'macunmount' to disconnect, 'macstatus' to check.
+#
+# While unmounted the mount point is kept read-only (0500). Without that guard
+# ~/macFlow-HOST is just an ordinary directory: writes succeed, look completely
+# normal, and never reach the Mac. fusermount needs write access to mount, so
+# macmount opens it to 0700 only long enough to mount and macunmount re-arms it.
 
-function macmount() {
-    local MOUNT_POINT="$HOME/macFlow-HOST"
-    local REMOTE_PATH="macFlow-SHARE" # Relative to your Mac Home folder
+MACFLOW_MOUNT="$HOME/macFlow-HOST"
+MACFLOW_REMOTE="macFlow-SHARE"   # relative to your Mac's home folder
 
-    # 1. Safety Check: Is it already mounted?
-    if mount | grep -q "$MOUNT_POINT"; then
-        echo "⚡ macOS is already mounted at $MOUNT_POINT"
-        return 0
-    fi
-
-    # 2. Ensure mount point exists
-    if [ ! -d "$MOUNT_POINT" ]; then
-        echo "Creating mount point: $MOUNT_POINT"
-        mkdir -p "$MOUNT_POINT"
-    fi
-
-    # 3. Cleanup stale connections (force unmount if stuck)
-    if [ -e "$MOUNT_POINT" ]; then
-        fusermount3 -u "$MOUNT_POINT" 2>/dev/null
-    fi
-
-    # 4. Mount macOS Shared Folder
-    echo "Connecting to macOS Host..."
-    # - Syntax: sshfs [alias]:[remote_path] [local_path] [options]
-    #   - host: The alias we configured in ~/.ssh/config above
-    #   - remote_path: /Users/matt/macFlow-SHARE
-    #   - local_path: ~/macFlow-HOST
-    #   - options:
-    #     - 'allow_other': allows other users (root) to see files
-    #     - 'reconnect': automatically restores connection after sleep/resume
-    #     - `uid=$(id -u),gid=$(id -g)`: ensures the files appear as owned by your linux user
-    sshfs "host:$REMOTE_PATH" "$MOUNT_POINT" -o allow_other,reconnect,uid=$(id -u),gid=$(id -g)
-
-    # 5. Verify result
-    if [ $? -eq 0 ]; then
-        echo "✅ Success: Shared folder mounted."
+_macflow_mounted() {
+    if command -v mountpoint >/dev/null 2>&1; then
+        mountpoint -q "$MACFLOW_MOUNT"
     else
-        echo "❌ Error: Could not connect to Host. Check network or SSH config."
+        grep -qs " ${MACFLOW_MOUNT} fuse.sshfs " /proc/mounts
     fi
 }
 
-function macunmount() {
-    fusermount3 -u ~/macFlow-HOST
-    echo "Disconnected from macOS."
+macstatus() {
+    if _macflow_mounted; then
+        echo "✅ mounted: host:$MACFLOW_REMOTE -> $MACFLOW_MOUNT"
+    else
+        echo "❌ not mounted — $MACFLOW_MOUNT is local to this VM"
+    fi
+}
+
+macmount() {
+    if _macflow_mounted; then
+        echo "⚡ Already mounted at $MACFLOW_MOUNT"
+        return 0
+    fi
+
+    mkdir -p "$MACFLOW_MOUNT" 2>/dev/null
+
+    # Anything sitting here while unmounted was written locally and is NOT on
+    # your Mac. Say so plainly before the mount hides it.
+    local stray
+    stray="$(ls -A "$MACFLOW_MOUNT" 2>/dev/null)"
+    if [ -n "$stray" ]; then
+        echo "⚠️  $MACFLOW_MOUNT is not empty while unmounted."
+        echo "    These are local to this VM, NOT on your Mac:"
+        echo "$stray" | sed 's/^/      /'
+        echo "    They stay on disk, but are hidden while the mount is active."
+    fi
+
+    # Clear a wedged mount, then open the directory just enough to mount.
+    fusermount3 -u "$MACFLOW_MOUNT" 2>/dev/null
+    chmod 700 "$MACFLOW_MOUNT" 2>/dev/null
+
+    echo "Connecting to macOS host..."
+    if ! sshfs "host:$MACFLOW_REMOTE" "$MACFLOW_MOUNT" \
+            -o allow_other,reconnect,uid="$(id -u)",gid="$(id -g)"; then
+        chmod 500 "$MACFLOW_MOUNT" 2>/dev/null   # re-arm the guard
+        echo "❌ Could not connect to your Mac."
+        echo "   Check the network, then try: ssh host true"
+        return 1
+    fi
+
+    # sshfs can exit 0 without leaving a usable mount, so confirm before
+    # claiming success -- that false positive is what makes writes vanish.
+    if ! _macflow_mounted; then
+        chmod 500 "$MACFLOW_MOUNT" 2>/dev/null
+        echo "❌ sshfs reported success but nothing is mounted."
+        return 1
+    fi
+
+    echo "✅ Mounted your Mac's $MACFLOW_REMOTE at $MACFLOW_MOUNT"
+}
+
+macunmount() {
+    if ! _macflow_mounted; then
+        chmod 500 "$MACFLOW_MOUNT" 2>/dev/null   # arm it even if already down
+        echo "Not mounted."
+        return 0
+    fi
+
+    if fusermount3 -u "$MACFLOW_MOUNT"; then
+        chmod 500 "$MACFLOW_MOUNT" 2>/dev/null   # re-arm the guard
+        echo "Disconnected from macOS."
+    else
+        echo "❌ Unmount failed — something may still have files open."
+        echo "   Check with: fuser -vm $MACFLOW_MOUNT"
+        return 1
+    fi
 }

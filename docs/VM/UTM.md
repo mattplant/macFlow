@@ -2,7 +2,13 @@
 
 Build notes for using **UTM** for virtualization in the `macFlow` project.
 
-We use **UTM** because it exposes standard Linux hardware (`virtio`) that has excellent upstream support in Arch Linux ARM and uses Apple `Virtualization.framework` for near-native speed.
+We use **UTM** because it exposes standard Linux hardware (`virtio`) that has excellent
+upstream support in Arch Linux ARM, and because it runs QEMU with Apple's Hypervisor
+framework (HVF) for near-native speed.
+
+> *Note:* UTM offers two backends. We use **QEMU accelerated by HVF**, not Apple's
+> `Virtualization.framework` — the QEMU backend has far better Linux driver support,
+> which is why the setup below unchecks "Use Apple Virtualization".
 
 ## Download Installation Media
 
@@ -26,10 +32,12 @@ brew install --cask utm
 Open UTM and create a new VM with these settings:
 
 - **Start**
-  - Select `Virtualize` (*Uses Apple `Virtualization.framework` for near-native speed*)
+  - Select `Virtualize` (*hardware-accelerated, as opposed to `Emulate`*)
   - Select `Linux`
 - **Hardware**
-  - **Memory:** `2048 MB` (*2 GB*)
+  - **Memory:** `4096 MB` (*4 GB*)
+    - *Headless Mode* runs comfortably in `2048 MB`; `4096 MB` is the practical
+      minimum once Hyprland, a browser and VS Code are running in Desktop Mode.
   - **CPU Cores:** Leave at `Default` for now.
   - *Note:* You can adjust this later based on performance needs.
   - **Display Output**
@@ -39,7 +47,7 @@ Open UTM and create a new VM with these settings:
   - **Uncheck** "Use Apple Virtualization"
     - *Why:* This forces QEMU backend, which has better Linux driver support.
   - **Boot Image Type:** Select `Boot from ISO image`
-  - Click `Browse` and select your `archboot-*.iso`.
+  - Click `Browse` and select the `archboot-...-aarch64.iso` you downloaded earlier.
 - **Storage**
   - Size of drive: `32 GB`
 - **Shared Directory**
@@ -65,7 +73,16 @@ In the **Settings** window that appears, apply these specific changes to support
     - *Why:* Required to unlock resolutions higher than 1280x800 (HiDPI).
 - **Network:**
   - **Network Mode:** `Bridged (Advanced)`
-  - *Why:* Gives the VM a distinct IP address on the LAN, allowing for seamless SSH connections and reliable file mounting.
+  - *Why:* Gives the VM its own IP on the LAN, so SSH and SSHFS work without port
+    forwarding.
+  - ⚠️ **Bridged networking is unreliable over Wi-Fi.** 802.11 will not relay frames
+    for a second MAC address behind one association, so the VM may get a DHCP lease
+    yet still be unreachable from your Mac. If `ping` to the VM fails while the VM
+    itself has working internet, this is why — use Ethernet, or switch the VM to
+    `Shared Network`.
+  - ⚠️ **Give every cloned VM a unique MAC address.** UTM does *not* regenerate it
+    when you clone a bundle. Two VMs sharing a MAC cannot run at the same time, and
+    the symptom is a silent host-to-guest ARP failure that looks like a network bug.
 - Click `Save`
 
 ## Continue to Arch Linux Base Installation

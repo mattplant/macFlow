@@ -2,19 +2,19 @@
 
 Development Tools for the macFlow project.
 
-## VSCode
+## VS Code
 
 ### Strategy
 
-Options for running VSCode in this architecture:
+Options for running VS Code in this architecture:
 
 - **Option A: Hybrid (Recommended for "Headless" Mode)**
-  - Install VSCode on **macOS**.
+  - Install VS Code on **macOS**.
   - Use the **Remote - SSH** extension to connect to `macflow.local`.
   - **Pros:** Native macOS UI/Fonts, maximum battery life, zero latency typing.
 
 - **Option B: VM Native (Recommended for "Desktop" Mode)**
-  - Install VSCode inside **Arch Linux**.
+  - Install VS Code inside **Arch Linux**.
   - **Pros:** Full GUI integration with Hyprland workspace rules.
 
 ## Installation (VM Native)
@@ -28,27 +28,24 @@ yay -S visual-studio-code-bin
 
 ### Configuration: Native Wayland Support
 
-By default, VSCode runs using XWayland. It is stable but might look slightly blurry on HiDPI screens unless you force high scaling.
+By default, VS Code runs under XWayland. That is stable, but can look slightly blurry
+on HiDPI screens.
 
-To force VSCode to run natively on Wayland (sharper text, no X11 overhead), we can create an alias.
+**This is already configured for you.** The stowed `.bashrc` defines:
 
 ```bash
-# Edit your shell profile
-nano ~/.bash_profile
-
-# Add this alias to force VSCode to use Wayland backend (Ozone)
 alias code='code --enable-features=UseOzonePlatform --ozone-platform=wayland'
 ```
 
-Reload the profile:
+> ⚠️ **Do not edit `~/.bashrc` directly.** After `stow` runs it is a *symlink into this
+> repository*, so editing it silently modifies your clone of macFlow. Change
+> `dotfiles/shell/.bashrc` in the repo instead, then re-run `configArch.sh` (or
+> `stow -R -t ~ shell` from `dotfiles/`) to redeploy.
 
-```bash
-source ~/.bash_profile
-```
+*Note:* If you hit flickering or missing window borders, remove that alias from
+`dotfiles/shell/.bashrc` to fall back to XWayland.
 
-*Note:* If you experience flickering or missing window borders, remove the alias to revert to the stable XWayland mode.
-
-### Launch VSCode with Wayland Support
+### Launch VS Code with Wayland Support
 
 From the terminal, simply run:
 
@@ -65,26 +62,47 @@ Set up your Git identity.
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 
-# Editor (Set VSCode as default for commit messages)
+# Editor (Set VS Code as default for commit messages)
+# Only if VS Code is installed IN the VM. In Headless Mode it runs on macOS, so
+# use a terminal editor instead:  git config --global core.editor "nano"
 git config --global core.editor "code --wait"
 
 # Default Branch
 git config --global init.defaultBranch main
 ```
 
-### Copy Public Key to GitHub
+### Git Identity: You Probably Do Not Need a Key in the VM
 
-1) View Key
+`macFlow` forwards your Mac's SSH agent into the VM, so git inside the VM signs with
+the key already on your Mac. Nothing to copy, nothing extra to revoke.
+
+Verify it is working — run this **inside the VM**:
 
 ```bash
+ssh-add -l
+# Your Mac's key fingerprint  -> agent forwarding is working
+# "The agent has no identities." -> see docs/Integration/macFlow-Integration.md
+```
+
+<details>
+<summary>If you specifically want a VM-only key instead</summary>
+
+The playbook already generated one at `~/.ssh/id_ed25519` inside the VM. That key is
+what `connect_mac.sh` authorizes on your Mac for SSHFS — it is not registered with
+any git host. To use it with GitHub as well:
+
+```bash
+# Run this INSIDE the VM
 cat ~/.ssh/id_ed25519.pub
 ```
 
-2) Copy the entire output string
+Copy the output, then add it at
+[GitHub Settings → SSH Keys](https://github.com/settings/keys) → `New SSH key`.
 
-3) Go to [GitHub Settings -> SSH Keys](https://github.com/settings/keys)
+Prefer agent forwarding unless you need the VM to authenticate independently of your
+Mac — a per-VM key is one more credential to track and revoke.
 
-4) Click `New SSH key` and paste it.
+</details>
 
 ## System Information
 
@@ -116,18 +134,19 @@ yay -S firefox
 
 #### Firefox Configuration: Native Wayland Support
 
-To ensure Firefox runs natively on Wayland (instead of XWayland) for crisp text and smooth scrolling, we set an environment variable.
+Firefox needs `MOZ_ENABLE_WAYLAND=1` to run natively on Wayland instead of XWayland,
+giving crisp text and smooth scrolling.
+
+**This is already configured for you**, in the stowed Hyprland config
+(`dotfiles/hypr/.config/hypr/conf/monitors.conf`):
 
 ```bash
-nano ~/.bash_profile
-# Add/Verify this line exists to force Firefox to use Wayland backend
-export MOZ_ENABLE_WAYLAND=1
-
-Reload the profile:
-
-```bash
-source ~/.bash_profile
+env = MOZ_ENABLE_WAYLAND,1
 ```
+
+Setting it there rather than in a shell profile means it applies to Firefox launched
+from Wofi and keybindings, not just from a terminal. As above, edit the file in the
+repo — not the symlink in `~/.config`.
 
 ### Chromium (Alternative)
 

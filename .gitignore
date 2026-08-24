@@ -1,0 +1,13 @@
+# Packer build artifacts (multi-GB VM images).
+# Unanchored so it matches regardless of the dir `packer build` is run from:
+# output_directory is resolved against the CWD, not the template location.
+build_output/
+packer_cache/
+*.qcow2
+*.fd
+crash.log
+packer/*.log
+
+# Editor / OS cruft
+.DS_Store
+.vscode/
