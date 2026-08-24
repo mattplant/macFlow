@@ -121,7 +121,13 @@ Two things to know when importing by hand:
   `Data/efi_vars.fd` may still point at the old install's bootloader. Delete it and
   let UTM regenerate; this image boots via systemd-boot at the removable-media path.
 - **Give the VM a fresh MAC address.** UTM does not regenerate it when you clone a
-  bundle, and two VMs sharing a MAC cannot run on the same network at once.
+  bundle, and two VMs sharing a MAC cannot run on the same network at once. The symptom
+  is not an obvious error: the VM gets a DHCP lease and has working internet, but your
+  Mac cannot reach it, because the host-to-guest ARP silently fails.
+  - Change it in **UTM's own settings UI**, not by editing `config.plist`. UTM holds a
+    registered bundle's config in memory and will happily ignore an edit made to the
+    file underneath it — a VM edited that way booted with the *old* address while the
+    plist on disk showed the new one.
 
 First login uses the credentials baked in below — change them. The system is
 already configured at this point, so the only remaining step is the handshake
