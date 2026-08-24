@@ -8,10 +8,17 @@ For seamless development flow, we need a shared workspace between macOS and the 
 - **Clipboard:** Copy/Paste is handled via **SPICE** (Desktop Mode) or **SSH** (Headless Mode).
 - **Identity:** Git credentials are passed via **SSH Agent Forwarding**
 
-This integration requires connectivity in two directions:
+This integration requires connectivity in two directions. They are separate, and each
+needs its own key — being authorized in one direction does not authorize the other.
 
-1. **Control Plane (macOS -> Linux):** Using SSH to access the VM terminal.
-2. **Data Plane (Linux -> macOS):** The VM mounting macOS files via SSHFS.
+| | Direction | Purpose | Set up by |
+| :-- | :-------- | :------ | :-------- |
+| **Control Plane** | macOS → Linux | SSH into the VM, VS Code Remote | **You**, Part 2 below |
+| **Data Plane** | Linux → macOS | The VM mounting your files over SSHFS | **`connect_mac.sh`**, run inside the VM |
+
+So Part 2 is manual and Part 3 is automated. If you have already run
+[`connect_mac.sh`](../../scripts/connect_mac.sh), the guest side is done and you only
+need Part 1 and Part 2 here.
 
 ## Part 1: Host Configuration (macOS)
 
