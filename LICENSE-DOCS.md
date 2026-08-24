@@ -45,14 +45,14 @@ If you reuse the `macFlow` documentation or architecture diagrams in your own pr
 #### Markdown
 
 ```markdown
-> Documentation adapted from [macFlow](https://github.com/mattplant/macFlow/) by [Matthew Plant](https://github.com/mattplant), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+> Documentation adapted from [macFlow](https://gitlab.com/beginnermind/macFlow) by [Matthew Plant](https://gitlab.com/beginner-mind), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ```
 
 #### HTML
 
 ```html
-Documentation adapted from <a href="https://github.com/mattplant/macFlow/">macFlow</a> by <a href="https://github.com/mattplant">Matthew Plant</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+Documentation adapted from <a href="https://gitlab.com/beginnermind/macFlow">macFlow</a> by <a href="https://gitlab.com/beginner-mind">Matthew Plant</a>, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
 ```
 
 #### Plain Text
@@ -60,5 +60,5 @@ Documentation adapted from <a href="https://github.com/mattplant/macFlow/">macFl
 Need to provide a link and credit in plain text formats.
 
 ```text
-Documentation adapted from macFlow (https://github.com/mattplant/macFlow/) by Matthew Plant (https://github.com/mattplant), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Documentation adapted from macFlow (https://gitlab.com/beginnermind/macFlow) by Matthew Plant (https://gitlab.com/beginner-mind), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
 ```
