@@ -6,14 +6,37 @@
 
 Shut down Linux gracefully from within the guest OS to avoid data loss or corruption.
 
-This can be done by many different ways including:
+There are several ways:
 
 - terminal commands like `sudo poweroff` or `sudo reboot`
-- graphical menus within your Linux desktop environment
-- or request it thru the UTM app menu: **Virtual Machine** > **Power** > **Request power down**
+- or request it through the UTM app menu: **Virtual Machine** > **Power** > **Request power down** (sends ACPI, which the guest handles gracefully)
 
-In Desktop Mode, `Super + Shift + Q` exits Hyprland and returns you to the TTY, where
-`sudo poweroff` shuts the VM down cleanly. Hyprland has no built-in power menu.
+**Avoid** closing the UTM window or force-stopping the VM — that is a hard power cut
+and risks filesystem corruption.
+
+### Exiting Hyprland (Desktop Mode)
+
+The desktop runs as a **uwsm-managed systemd session**, not a bare compositor:
+
+```text
+wayland-wm@Hyprland.service       Main service for Hyprland
+wayland-wm-env@Hyprland.service   Environment preloader
+graphical-session.target
+```
+
+Two safe ways out, both returning you to the TTY:
+
+| | |
+| :-- | :-- |
+| `Super + Shift + Q` | The configured keybinding. Hyprland is the service's main process, so systemd unwinds `graphical-session.target` when it exits. |
+| `uwsm stop` | The explicit route. Unwinds the unit tree in order rather than relying on the compositor exiting first — useful if something is wedged. |
+
+Then `sudo poweroff` from the TTY.
+
+Hyprland has no built-in power menu.
+
+> ⚠️ `Cmd + Q` with the mouse uncaptured quits **UTM itself**, killing the VM instantly.
+> See [the "Safety Defusal"](./Desktop.md#the-safety-defusal) for how to disarm it.
 
 ## Desktop Mode
 
