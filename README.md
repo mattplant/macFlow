@@ -1,5 +1,7 @@
 # macFlow
 
+> **Canonical home: [gitlab.com/beginnermind/macFlow](https://gitlab.com/beginnermind/macFlow)** — development, issues, and merge requests happen there. The GitHub copy is a read-only mirror.
+
 [![Docs License: CC BY 4.0](https://img.shields.io/badge/Docs_License-CC_BY_4.0-lightgrey.svg?logo=creativecommons)](./LICENSE-DOCS.md)
 [![Source Code License: MIT](https://img.shields.io/badge/Source_Code-MIT-blue.svg?logo=open-source-initiative&logoColor=white)](./LICENSE)
 
