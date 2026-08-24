@@ -134,6 +134,28 @@ From inside the Linux VM (or via SSH), use these shell functions:
 > macOS; `macFlow-HOST` is where **the host's** files appear inside the VM. Same
 > directory, named for whichever side you are standing on.
 
+### Troubleshooting: "user has no write access to mountpoint"
+
+```
+fusermount3: user has no write access to mountpoint /home/macflow/macFlow-HOST
+```
+
+Your shell has a **stale `macmount`**. The mount point is kept at `0500` and `macmount`
+opens it to `0700` only while mounting — an older copy of the function does not do
+that, so it cannot mount its own mount point. This happens after pulling a newer
+revision, or in a shell that started before the dotfiles were updated.
+
+Reload the profile (or log out and back in):
+
+```bash
+source ~/.bash_profile
+macstatus     # should now exist
+macmount
+```
+
+If `macstatus: command not found`, that confirms it — the running shell predates the
+current dotfiles.
+
 ### The mount point is read-only when unmounted
 
 `~/macFlow-HOST` is deliberately kept at mode `0500` while nothing is mounted, and

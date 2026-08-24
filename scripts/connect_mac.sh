@@ -147,6 +147,11 @@ log "Step 2: SSH host keys..."
 
 read -r -p "Regenerate this VM's SSH host keys? Recommended on a fresh image. (y/n): " regen
 if [[ "$regen" =~ ^[Yy]$ ]]; then
+    # Be explicit about which password sudo wants. Everything around this step
+    # talks about "your Mac", so a bare [sudo] prompt reads as the Mac's
+    # password -- it is not, and the rejection is silent and confusing.
+    echo ""
+    echo -e "${YELLOW}sudo needs THIS VM's password for '$USER' -- not your Mac's.${NC}"
     sudo rm -f /etc/ssh/ssh_host_*
     sudo ssh-keygen -A
     sudo systemctl restart sshd
@@ -206,7 +211,9 @@ fi
 
 # --- 5. Authorize This VM On Your Mac ---
 log "Step 4: Copying this VM's public key to your Mac..."
-echo -e "${YELLOW}NOTE: You will be asked for your MAC password to authorize the key.${NC}"
+echo ""
+echo -e "${YELLOW}This prompt wants your MAC password (for '$mac_user' on $mac_host).${NC}"
+echo -e "${YELLOW}Passwords do not echo -- type it and press Enter.${NC}"
 
 if ssh-copy-id host; then
     success "SSH key authorized."
